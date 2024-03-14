@@ -47,6 +47,8 @@ jobs:
           BASIC_AUTH: ${{ secrets.PULLPREVIEW_BASIC_AUTH }}
         run: |
           cp .env.example .env
+          echo "APP_ENV=production" >> .env
+          echo "APP_DEBUG=false" >> .env
           for keyValuePair in $ENV_VARS; do
             echo "$keyValuePair" >> .env
           done
