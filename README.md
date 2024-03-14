@@ -80,3 +80,7 @@ The output has to be stored inside the `PULLPREVIEW_BASIC_AUTH` secret.
 
 You need credentials of an IAM user that can manage AWS Lightsail. For a recommended configuration take a look at
 the [Pullpreview wiki](https://github.com/pullpreview/action/wiki/Recommended-AWS-Configuration).
+
+## License
+
+The MIT License (MIT). Please see [License File](LICENSE) for more information.
