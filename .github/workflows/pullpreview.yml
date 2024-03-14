@@ -1,0 +1,74 @@
+name: Boot a staging environment using PullPreview
+
+on:
+  workflow_call:
+    inputs:
+      PULLPREVIEW_ADMINS:
+        description: A comma separated list of users which will have SSH access to the Lightsail instance.
+        required: false
+        default: "@collaborators/push"
+        type: string
+      INSTANCE_TYPE:
+        description: The Lightsail instance type used for the staging environment.
+        required: false
+        default: nano
+        type: string
+    secrets:
+      ENV_VARS:
+        description: Variables which should be written into the .env file.
+        required: false
+      PULLPREVIEW_BASIC_AUTH:
+        description: The Basic Authentication credentials in a htpasswd format.
+        required: false
+      PULLPREVIEW_AWS_ACCESS_KEY_ID:
+        description: An AWS Access Key ID with permissions to manage Lightsail instances.
+        required: true
+      PULLPREVIEW_AWS_SECRET_ACCESS_KEY:
+        description: An AWS Secret Access Key with permissions to manage Lightsail instances.
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read # to fetch code (actions/checkout)
+      deployments: write # to delete deployments
+      pull-requests: write # to remove labels
+      statuses: write # to create commit status
+
+    steps:
+      - name: Checkout GitHub repository
+        uses: actions/checkout@v4
+
+      - name: Generate .env and .htpasswd file
+        env:
+          ENV_VARS: ${{ secrets.ENV_VARS }}
+          BASIC_AUTH: ${{ secrets.PULLPREVIEW_BASIC_AUTH }}
+        run: |
+          cp .env.example .env
+          echo "APP_ENV=production" >> .env
+          echo "APP_DEBUG=false" >> .env
+          for keyValuePair in $ENV_VARS; do
+            echo "$keyValuePair" >> .env
+          done
+          echo "$BASIC_AUTH" > .htpasswd
+
+      - name: Boot PullPreview staging environment
+        uses: pullpreview/action@v5
+        with:
+          # Those GitHub users will have SSH access to the servers
+          admins: ${{ inputs.PULLPREVIEW_ADMINS }}
+          # Use the cidrs option to restrict access to the live environments to specific IP ranges
+          cidrs: "0.0.0.0/0"
+          compose_files: docker-compose.pullpreview.yml
+          # The preview URL will target this port
+          default_port: 80
+          # Use a 512MB RAM instance type instead of the default 2GB
+          instance_type: ${{ inputs.INSTANCE_TYPE }}
+          # Ports to open on the server
+          ports: 80, 443
+        env:
+          AWS_ACCESS_KEY_ID: "${{ secrets.PULLPREVIEW_AWS_ACCESS_KEY_ID }}"
+          AWS_SECRET_ACCESS_KEY: "${{ secrets.PULLPREVIEW_AWS_SECRET_ACCESS_KEY }}"
+          AWS_REGION: "eu-central-1"
