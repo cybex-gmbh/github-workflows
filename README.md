@@ -50,6 +50,19 @@ As soon as one `Secret` is explicitly specified, all other `Secrets` also have t
 
 ### Docker Build & Push
 
+This workflow builds a docker image and pushes it to Docker Hub.
+
+Working with GitHub releases is required as the semantic versioning is used for image tags. The `latest` tag will only be applied, if the release is marked as latest in GitHub. 
+
+Additionally, the repository README file and description will be synchronized to Docker Hub. 
+
+For this workflow to work, the following GitHub secrets have to be defined:
+
+- DOCKERHUB_USERNAME
+- DOCKERHUB_TOKEN
+
+Also, the Docker Hub repository has to be passed as input. See the workflow input section for details.
+
 ### [Pullpreview](https://github.com/pullpreview/action)
 
 When labeling a pull request with the "pullpreview" label, a staging environment is booted. To make this functional, some environment variables have to be stored in GitHub secrets:
