@@ -6,38 +6,17 @@ A workflow that uses another workflow is referred to as a "caller" workflow. The
 
 ## Usage
 
+### Examples
+
+There are examples on how to call the reusable workflows in the `/examples` folder. Workflows have to be placed in the `.github/workflows` folder in your repository.
+
 ### General
-
-To call a reusable workflow, define a job without steps and reference the workflow file in the `uses` keyword:
-
-```yml
-jobs:
-  your-job-name:
-    name: A concise name for your job
-    uses: username/repository/.github/workflows/workflow.yml@main
-```
-
-If a reusable workflow expects `Inputs` and `Secrets`, they can be passed like this:
-
-```yml
-...
-uses: username/repository/.github/workflows/workflow.yml@main
-with:
-  AN_INPUT: 1234
-secrets:
-  A_MULTILINE_SECRET: |
-    SECRET1="${{ secrets.SECRET1 }}"
-    SECRET2="${{ secrets.SECRET2 }}"
-  ANOTHER_SECRET: ${{ secrets.SECRET3 }}
-```
 
 > [!NOTE]
 >
-> `Inputs` are non-sensitive variables of the type boolean, number or string.
+> `Inputs` are non-sensitive variables of the type boolean, number or string. Passed with the `with` keyword.
 >
-> `Secrets` are sensitive variables which will not be shown in workflow logs.
->
-> A multiline secret can be used to pass an arbitrary amount of secrets to a called workflow, e.g. env variables.
+> `Secrets` are sensitive variables which will not be shown in workflow logs. Passed with the `secrets` keyword.
 
 If all required `Secrets` are already in any secret store, they can be inherited to the called workflow:
 
@@ -47,6 +26,16 @@ If all required `Secrets` are already in any secret store, they can be inherited
 ```
 
 As soon as one `Secret` is explicitly specified, all other `Secrets` also have to be specified.
+
+A multiline secret can be used to pass an arbitrary amount of secrets to a called workflow, e.g. env variables:
+
+```yml
+...
+  secrets:
+    A_MULTILINE_SECRET: |
+      SECRET1="${{ secrets.SECRET1 }}"
+      SECRET2="${{ secrets.SECRET2 }}"
+```
 
 ### Docker Build & Push
 
@@ -65,7 +54,7 @@ Also, the Docker Hub repository has to be passed as input. See the workflow inpu
 
 ### [Pullpreview](https://github.com/pullpreview/action)
 
-When labeling a pull request with the "pullpreview" label, a staging environment is booted. To make this functional, some environment variables have to be stored in GitHub secrets:
+When labeling a pull request with the `pullpreview` label, a staging environment is booted. To make this functional, some environment variables have to be stored in GitHub secrets:
 
 - PULLPREVIEW_BASIC_AUTH
 - PULLPREVIEW_AWS_ACCESS_KEY_ID
@@ -91,5 +80,3 @@ The output has to be stored inside the `PULLPREVIEW_BASIC_AUTH` secret.
 
 You need credentials of an IAM user that can manage AWS Lightsail. For a recommended configuration take a look at
 the [Pullpreview wiki](https://github.com/pullpreview/action/wiki/Recommended-AWS-Configuration).
-
-## Development

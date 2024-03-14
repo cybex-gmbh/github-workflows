@@ -1,0 +1,13 @@
+name: Docker Image CI
+
+on:
+  release:
+    types: [ published ]
+
+jobs:
+  build-push-docker-image:
+    name: Build, test and push docker image
+    uses: cybex-gmbh/github-workflows/.github/workflows/docker-build-push.yml@main
+    with:
+      DOCKER_REPOSITORY: cybexwebdev/yourRepository
+    secrets: inherit
