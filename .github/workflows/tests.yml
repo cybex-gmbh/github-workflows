@@ -1,0 +1,75 @@
+name: Setup environment and execute tests for a Laravel project
+
+on:
+  workflow_call:
+    inputs:
+      PHP_VERSION:
+        description: The PHP version to execute the tests for.
+        required: true
+        type: string
+      LARAVEL_VERSION:
+        description: The Laravel version to execute the tests for.
+        required: true
+        type: string
+      DEPENDENCY_VERSION:
+        description: The dependency version to execute the tests for.
+        required: true
+        type: string
+      MYSQL_DATABASE:
+        description: The name of the MySQL database.
+        required: true
+        type: string
+      TEST_COMMANDS:
+        description: The commands which execute the tests.
+        required: false
+        type: string
+        default: |
+          php artisan migrate:fresh --env=ci
+          php artisan test --env=ci --no-coverage
+
+jobs:
+  execute-tests:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: yes
+          MYSQL_DATABASE: ${{ inputs.MYSQL_DATABASE }}
+        ports:
+          - 3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    name: PHP ${{ inputs.PHP_VERSION }} with Laravel ${{ inputs.LARAVEL_VERSION }} (${{ inputs.DEPENDENCY_VERSION }})
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ inputs.PHP_VERSION }}
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, gd
+          tools: composer:v2
+          coverage: none
+
+      - name: Get composer cache directory
+        id: get-cache-dir
+        run: echo "directory=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.get-cache-dir.outputs.directory }}
+          key: dependencies-laravel-${{ inputs.LARAVEL_VERSION }}-php-${{ inputs.PHP_VERSION }}-composer-${{ hashFiles('composer.json') }}
+          restore-keys: dependencies-laravel-${{ inputs.LARAVEL_VERSION }}-php-${{ inputs.PHP_VERSION }}-composer-
+
+      - name: Install dependencies
+        run: |
+          composer require "laravel/framework:${{ inputs.LARAVEL_VERSION }}" --no-interaction --no-update --dev --no-progress
+          composer update --${{ inputs.DEPENDENCY_VERSION }} --prefer-dist --no-interaction --no-progress
+
+      - name: Execute tests
+        run: ${{ inputs.TEST_COMMANDS }}
+        env:
+          DB_PORT: ${{ job.services.mysql.ports[3306] }}
