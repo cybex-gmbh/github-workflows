@@ -81,6 +81,13 @@ The output has to be stored inside the `PULLPREVIEW_BASIC_AUTH` secret.
 You need credentials of an IAM user that can manage AWS Lightsail. For a recommended configuration take a look at
 the [Pullpreview wiki](https://github.com/pullpreview/action/wiki/Recommended-AWS-Configuration).
 
+### Tests workflow
+
+This workflow executes tests for Laravel projects.
+
+You may pass custom commands which execute the tests, in case your project needs a specific way of executing the tests on the command line (e.g. package projects that don't have the `Artisan` file).
+For the default take a look at the workflow file.
+
 ## License
 
 The MIT License (MIT). Please see [License File](LICENSE) for more information.

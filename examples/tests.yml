@@ -1,0 +1,26 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - main
+      - release/*
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  execute-tests:
+    name: Setup testing environment and execute tests
+    uses: cybex-gmbh/github-workflows/.github/workflows/tests.yml@main
+    strategy:
+      fail-fast: true
+      matrix:
+        php: [ 8.2, 8.3 ]
+        laravel: [ 11.* ]
+        dependency-version: [ prefer-stable ]
+    with:
+      PHP_VERSION: ${{ matrix.php }}
+      LARAVEL_VERSION: ${{ matrix.laravel }}
+      DEPENDENCY_VERSION: ${{ matrix.dependency-version }}
+      MYSQL_DATABASE: myproject_test
+#     TEST_COMMANDS: vendor/bin/phpunit -c phpunit-ci.xml.dist
