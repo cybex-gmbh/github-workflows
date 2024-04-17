@@ -85,7 +85,7 @@ the [Pullpreview wiki](https://github.com/pullpreview/action/wiki/Recommended-AW
 
 This workflow executes tests for Laravel projects.
 
-You may pass custom commands which execute the tests, in case your project needs a specific way of executing the tests on the command line (e.g. packages without `Artisan`).
+You may pass custom commands which execute the tests, in case your project needs a specific way of executing the tests on the command line (e.g. package projects that don't have the `Artisan` file).
 For the default take a look at the workflow file.
 
 ## License
