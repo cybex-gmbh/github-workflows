@@ -24,3 +24,4 @@ jobs:
       DEPENDENCY_VERSION: ${{ matrix.dependency-version }}
       MYSQL_DATABASE: myproject_test
 #     TEST_COMMANDS: vendor/bin/phpunit -c phpunit-ci.xml.dist
+#     LINUX_PACKAGES: imagemagick jpegoptim optipng pngquant gifsicle webp ffmpeg

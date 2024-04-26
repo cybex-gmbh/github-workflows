@@ -39,6 +39,7 @@ jobs:
 
     steps:
       - name: Checkout GitHub repository
+        # https://github.com/actions/checkout
         uses: actions/checkout@v4
 
       - name: Generate .env and .htpasswd file
@@ -55,6 +56,7 @@ jobs:
           echo "$BASIC_AUTH" > .htpasswd
 
       - name: Boot PullPreview staging environment
+        # https://github.com/pullpreview/action
         uses: pullpreview/action@v5
         with:
           # Those GitHub users will have SSH access to the servers
