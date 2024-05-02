@@ -62,6 +62,22 @@ When labeling a pull request with the `pullpreview` label, a staging environment
 
 There might be more necessary environment variables, depending on the app.
 
+#### Viewing the deployment
+
+After successfully deploying, the staging environment can be viewed at the bottom of the conversation history.
+
+#### SSH
+
+User: ec2-user
+
+IP: Can be found in the URL of the deployment or is printed out in the GitHub Actions log of the workflow.
+
+```bash
+ssh ec2-user@0.0.0.0
+```
+
+This will also be printed out in the comment section of the pull request and updated after each deployment.
+
 #### Basic auth
 
 The basic authentication is used to prevent the staging environment from being publicly viewable.
