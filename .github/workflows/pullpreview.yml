@@ -13,6 +13,10 @@ on:
         required: false
         default: nano
         type: string
+      FILES:
+        description: Files which can be passed as artifacts
+        required: false
+        type: string
     secrets:
       ENV_VARS:
         description: Variables which should be written into the .env file.
