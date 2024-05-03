@@ -66,6 +66,10 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ inputs.FILE }}
+      - name: Delete passed artifact
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: ${{ inputs.FILE }}
       - name: Boot PullPreview staging environment
         id: pullpreview
         # https://github.com/pullpreview/action
