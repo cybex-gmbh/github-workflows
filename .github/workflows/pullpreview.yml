@@ -66,14 +66,16 @@ jobs:
       - name: Download passed artifact.
         # https://github.com/actions/download-artifact
         uses: actions/download-artifact@v4
+        if: ${{ inputs.ARTIFACT_NAME }}
         with:
-          name: ${{ inputs.FILES }}
+          name: ${{ inputs.ARTIFACT_NAME }}
 
       - name: Delete passed artifact.
         # https://github.com/GeekyEggo/delete-artifact
         uses: geekyeggo/delete-artifact@v5
+        if: ${{ inputs.ARTIFACT_NAME }}
         with:
-          name: ${{ inputs.FILES }}
+          name: ${{ inputs.ARTIFACT_NAME }}
 
       - name: Boot PullPreview staging environment
         id: pullpreview
