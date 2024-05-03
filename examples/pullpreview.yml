@@ -5,6 +5,32 @@ on:
     types: [ labeled, unlabeled, synchronize, closed, reopened ]
 
 jobs:
+  # Optional, provide files as an artifact.
+  # https://docs.github.com/en/actions/using-workflows/storing-workflow-data-as-artifacts
+  upload-artifact:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout file.
+      # https://github.com/actions/checkout
+      uses: actions/checkout@v4
+      with:
+        sparse-checkout: |
+          storage/app/existingFile.txt
+        # https://git-scm.com/docs/git-sparse-checkout#_internalscone_mode_handling
+        sparse-checkout-cone-mode: false
+
+    - name: Create file.
+      run: echo "Hello World" > helloWorld.txt
+
+    - name: Upload file as artifact.
+      # https://github.com/actions/upload-artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: hello-world
+        path: |
+          storage/app/existingFile.txt
+          helloWorld.txt
+
   deploy-staging-environment:
     permissions:
       contents: read # to fetch code (actions/checkout)
@@ -13,9 +39,11 @@ jobs:
       statuses: write # to create commit status
 
     name: Deploy PullPreview staging environment
+    # https://github.com/cybex-gmbh/github-workflows/blob/main/.github/workflows/pullpreview.yml
     uses: cybex-gmbh/github-workflows/.github/workflows/pullpreview.yml@main
     with:
       PULLPREVIEW_ADMINS: jheusinger, gael-connan-cybex, holyfabi, lupinitylabs, mszulik
+      ARTIFACT_NAME: hello-world
     secrets:
       ENV_VARS: |
         A_DOTENV_VARIABLE="${{ secrets.A_REPOSITORY_SECRET }}"
