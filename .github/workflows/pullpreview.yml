@@ -13,8 +13,8 @@ on:
         required: false
         default: nano
         type: string
-      FILE:
-        description: A File which can be passed as artifacts
+      FILES:
+        description: Files which can be passed as artifacts.
         required: false
         type: string
     secrets:
@@ -62,14 +62,14 @@ jobs:
             echo "$keyValuePair" >> .env
           done
           echo "$BASIC_AUTH" > .htpasswd
-      - name: Download passed file
+      - name: Download passed artifact.
         uses: actions/download-artifact@v4
         with:
-          name: ${{ inputs.FILE }}
-      - name: Delete passed artifact
+          name: ${{ inputs.FILES }}
+      - name: Delete passed artifact.
         uses: geekyeggo/delete-artifact@v5
         with:
-          name: ${{ inputs.FILE }}
+          name: ${{ inputs.FILES }}
       - name: Boot PullPreview staging environment
         id: pullpreview
         # https://github.com/pullpreview/action
