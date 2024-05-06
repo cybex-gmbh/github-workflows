@@ -64,16 +64,16 @@ jobs:
           echo "$BASIC_AUTH" > .htpasswd
 
       - name: Download passed artifact.
+        if: ${{ inputs.ARTIFACT_NAME }}
         # https://github.com/actions/download-artifact
         uses: actions/download-artifact@v4
-        if: ${{ inputs.ARTIFACT_NAME }}
         with:
           name: ${{ inputs.ARTIFACT_NAME }}
 
       - name: Delete passed artifact.
+        if: ${{ inputs.ARTIFACT_NAME }}
         # https://github.com/GeekyEggo/delete-artifact
         uses: geekyeggo/delete-artifact@v5
-        if: ${{ inputs.ARTIFACT_NAME }}
         with:
           name: ${{ inputs.ARTIFACT_NAME }}
 
