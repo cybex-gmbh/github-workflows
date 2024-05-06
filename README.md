@@ -37,18 +37,6 @@ A multiline secret can be used to pass an arbitrary amount of secrets to a calle
       SECRET2="${{ secrets.SECRET2 }}"
 ```
 
-#### Artifacts
-
-The name of an artifact can be passed as an `Input` to share data between jobs. The shared data is then stored under the specified path of an artifact upload.
-
-```yml
-...
-  with:
-    ARTIFACT_NAME: hello-world
-```
-
-See [GitHub Artifacts Docs](https://docs.github.com/en/actions/using-workflows/storing-workflow-data-as-artifacts) for more information. 
-
 ### Docker Build & Push
 
 This workflow builds a docker image and pushes it to Docker Hub.
@@ -108,6 +96,12 @@ The output has to be stored inside the `PULLPREVIEW_BASIC_AUTH` secret.
 
 You need credentials of an IAM user that can manage AWS Lightsail. For a recommended configuration take a look at
 the [Pullpreview wiki](https://github.com/pullpreview/action/wiki/Recommended-AWS-Configuration).
+
+#### Artifacts
+
+The name of an artifact can be passed as an `Input` to include additional files on the staging environment. When extracting downloaded artifacts, the file paths are preserved.
+
+See [GitHub Artifacts Docs](https://docs.github.com/en/actions/using-workflows/storing-workflow-data-as-artifacts) for more information.
 
 ### Tests workflow
 
