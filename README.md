@@ -97,6 +97,12 @@ The output has to be stored inside the `PULLPREVIEW_BASIC_AUTH` secret.
 You need credentials of an IAM user that can manage AWS Lightsail. For a recommended configuration take a look at
 the [Pullpreview wiki](https://github.com/pullpreview/action/wiki/Recommended-AWS-Configuration).
 
+#### Artifacts
+
+The name of an artifact can be passed as an `Input` to include additional files on the staging environment. When extracting downloaded artifacts, the file paths are preserved.
+
+See [GitHub Artifacts Docs](https://docs.github.com/en/actions/using-workflows/storing-workflow-data-as-artifacts) for more information.
+
 ### Tests workflow
 
 This workflow executes tests for Laravel projects.

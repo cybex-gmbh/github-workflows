@@ -13,6 +13,10 @@ on:
         required: false
         default: nano
         type: string
+      ARTIFACT_NAME:
+        description: The name of an Artifact which will be extracted while preserving file paths.
+        required: false
+        type: string
     secrets:
       ENV_VARS:
         description: Variables which should be written into the .env file.
@@ -58,6 +62,20 @@ jobs:
             echo "$keyValuePair" >> .env
           done
           echo "$BASIC_AUTH" > .htpasswd
+
+      - name: Download passed artifact.
+        if: ${{ inputs.ARTIFACT_NAME }}
+        # https://github.com/actions/download-artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.ARTIFACT_NAME }}
+
+      - name: Delete passed artifact.
+        if: ${{ inputs.ARTIFACT_NAME }}
+        # https://github.com/GeekyEggo/delete-artifact
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: ${{ inputs.ARTIFACT_NAME }}
 
       - name: Boot PullPreview staging environment
         id: pullpreview
