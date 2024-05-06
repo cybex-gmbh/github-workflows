@@ -14,7 +14,7 @@ on:
         default: nano
         type: string
       ARTIFACT_NAME:
-        description: A Artifact which should be downloaded.
+        description: The name of an Artifact which will be extracted while preserving file paths.
         required: false
         type: string
     secrets:
