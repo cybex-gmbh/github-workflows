@@ -37,6 +37,18 @@ A multiline secret can be used to pass an arbitrary amount of secrets to a calle
       SECRET2="${{ secrets.SECRET2 }}"
 ```
 
+#### Artifacts
+
+The name of an artifact can be passed as an `Input` to share data between jobs. The shared data is then stored under the specified path of an artifact upload.
+
+```yml
+...
+  with:
+    ARTIFACT_NAME: hello-world
+```
+
+See [GitHub Artifacts Docs](https://docs.github.com/en/actions/using-workflows/storing-workflow-data-as-artifacts) for more information. 
+
 ### Docker Build & Push
 
 This workflow builds a docker image and pushes it to Docker Hub.
