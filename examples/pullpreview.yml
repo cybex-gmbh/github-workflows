@@ -8,9 +8,11 @@ jobs:
   # Optional, provide files as an artifact.
   # https://docs.github.com/en/actions/using-workflows/storing-workflow-data-as-artifacts
   upload-artifact:
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'pullpreview') || github.event.action == 'unlabeled' || github.event.action == 'closed' }}
     runs-on: ubuntu-latest
     steps:
     - name: Checkout file.
+      if: ${{ contains(github.event.pull_request.labels.*.name, 'pullpreview') }}
       # https://github.com/actions/checkout
       uses: actions/checkout@v4
       with:
@@ -20,9 +22,11 @@ jobs:
         sparse-checkout-cone-mode: false
 
     - name: Create file.
+      if: ${{ contains(github.event.pull_request.labels.*.name, 'pullpreview') }}
       run: echo "Hello World" > helloWorld.txt
 
     - name: Upload file as artifact.
+      if: ${{ contains(github.event.pull_request.labels.*.name, 'pullpreview') }}
       # https://github.com/actions/upload-artifact
       uses: actions/upload-artifact@v4
       with:
@@ -32,6 +36,7 @@ jobs:
           helloWorld.txt
 
   deploy-staging-environment:
+    needs: upload-artifact
     permissions:
       contents: read # to fetch code (actions/checkout)
       deployments: write # to delete deployments
@@ -43,6 +48,7 @@ jobs:
     uses: cybex-gmbh/github-workflows/.github/workflows/pullpreview.yml@main
     with:
       PULLPREVIEW_ADMINS: jheusinger, gael-connan-cybex, holyfabi, lupinitylabs, mszulik
+#      INSTANCE_TYPE: large
       ARTIFACT_NAME: hello-world
     secrets:
       ENV_VARS: |

@@ -22,7 +22,7 @@ If all required `Secrets` are already in any secret store, they can be inherited
 
 ```yml
 ...
-    secrets: inherit
+secrets: inherit
 ```
 
 As soon as one `Secret` is explicitly specified, all other `Secrets` also have to be specified.
@@ -31,19 +31,15 @@ A multiline secret can be used to pass an arbitrary amount of secrets to a calle
 
 ```yml
 ...
-  secrets:
-    A_MULTILINE_SECRET: |
-      SECRET1="${{ secrets.SECRET1 }}"
-      SECRET2="${{ secrets.SECRET2 }}"
+secrets:
+  A_MULTILINE_SECRET: |
+    SECRET1="${{ secrets.SECRET1 }}"
+    SECRET2="${{ secrets.SECRET2 }}"
 ```
 
 ### Docker Build & Push
 
 This workflow builds a docker image and pushes it to Docker Hub.
-
-Working with GitHub releases is required as the semantic versioning is used for image tags. The `latest` tag will only be applied, if the release is marked as latest in GitHub. 
-
-Additionally, the repository README file and description will be synchronized to Docker Hub. 
 
 For this workflow to work, the following GitHub secrets have to be defined:
 
@@ -51,6 +47,18 @@ For this workflow to work, the following GitHub secrets have to be defined:
 - DOCKERHUB_TOKEN
 
 Also, the Docker Hub repository has to be passed as input. See the workflow input section for details.
+
+#### Production Images
+
+Working with GitHub releases is required as the semantic versioning is used for image tags. The `latest` tag will only be applied, if the release is marked as
+latest in GitHub.
+
+Additionally, the repository README file and description will be synchronized to Docker Hub.
+
+#### Pull Request Images
+
+When this workflow is called from a pull request with a `pullpreview` label, the image will be tagged with the branch name.
+The image will be deleted after the pull request is closed.
 
 ### [Pullpreview](https://github.com/pullpreview/action)
 
@@ -107,10 +115,11 @@ See [GitHub Artifacts Docs](https://docs.github.com/en/actions/using-workflows/s
 
 This workflow executes tests for Laravel projects.
 
-You may pass custom commands which execute the tests, in case your project needs a specific way of executing the tests on the command line (e.g. package projects that don't have the `Artisan` file).
+You may pass custom commands which execute the tests, in case your project needs a specific way of executing the tests on the command line (e.g. package projects that don't have
+the `Artisan` file).
 For the default, take a look at the workflow file.
 
-There is also an `Input` for when you need to install additional linux packages. 
+There is also an `Input` for when you need to install additional linux packages.
 
 ## License
 
