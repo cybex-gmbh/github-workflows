@@ -8,7 +8,7 @@ on:
         required: true
         type: string
       DOCKERFILE_PATH:
-        description: The path to the Dockerfile.
+        description: The relative path to the Dockerfile from the project root.
         required: false
         type: string
         default: ./docker/Dockerfile
