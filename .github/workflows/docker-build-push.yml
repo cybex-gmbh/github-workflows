@@ -7,9 +7,15 @@ on:
         description: The Docker repository consisting of organization/user name and project name.
         required: true
         type: string
+      DOCKERFILE_PATH:
+        description: The relative path to the Dockerfile from the project root.
+        required: false
+        type: string
+        default: ./docker/Dockerfile
 
 jobs:
-  build-push-docker-image:
+  production-image:
+    if: ${{ github.event_name == 'release' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -33,8 +39,8 @@ jobs:
             "${{ github.api_url }}/repos/${{ github.repository }}/releases/latest" \
           | jq -r .tag_name)" >> $GITHUB_ENV
 
-      - name: Specify docker image tags
-        id: meta
+      - name: Specify docker image tags for production
+        id: meta-production
         # https://github.com/docker/metadata-action
         uses: docker/metadata-action@v5
         with:
@@ -54,8 +60,8 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           push: true
-          file: ./docker/Dockerfile
-          tags: ${{ steps.meta.outputs.tags }}
+          file: ${{ inputs.DOCKERFILE_PATH }}
+          tags: ${{ steps.meta-production.outputs.tags }}
 
       - name: Sync README with Docker Hub description
         if: ${{ github.ref_name == env.LATEST_TAG }}
@@ -66,3 +72,51 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
           repository: ${{ inputs.DOCKER_REPOSITORY }}
           short-description: ${{ github.event.repository.description }}
+
+  pr-image:
+    if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'pullpreview') }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Login to Docker Hub
+        # https://github.com/docker/login-action
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Get branch name
+        run: echo "BRANCH_NAME=$(echo ${GITHUB_HEAD_REF} | tr / -)" >> $GITHUB_ENV
+
+      - name: Specify docker image tags for pull request
+        id: meta-pr
+        # https://github.com/docker/metadata-action
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ inputs.DOCKER_REPOSITORY }}
+          flavor: |
+            latest=false
+          tags: |
+            type=raw,value=${{ env.BRANCH_NAME }}
+
+      - name: Build and push docker image
+        # https://github.com/docker/build-push-action
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          file: ${{ inputs.DOCKERFILE_PATH }}
+          tags: ${{ steps.meta-pr.outputs.tags }}
+
+  delete-pr-image:
+    if: ${{ github.event_name == 'pull_request' && github.event.action == 'closed' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Delete docker image which was created for this pull request
+        env:
+          BRANCH: ${{ github.head_ref }}
+        run: |
+          MODIFIED_BRANCH_NAME=${BRANCH/\//-}
+          TOKEN=$(curl -s -H "Content-Type: application/json" -X POST -d '{"username": "'${{ secrets.DOCKERHUB_USERNAME }}'", "password": "'${{ secrets.DOCKERHUB_TOKEN }}'"}' https://hub.docker.com/v2/users/login/ | jq -r .token)
+          curl -s -X DELETE -H "Authorization: Bearer ${TOKEN}" https://hub.docker.com/v2/repositories/${{ inputs.DOCKER_REPOSITORY }}/tags/${MODIFIED_BRANCH_NAME}/

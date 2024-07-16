@@ -47,10 +47,12 @@ jobs:
 
     steps:
       - name: Checkout GitHub repository
+        if: ${{ contains(github.event.pull_request.labels.*.name, 'pullpreview') }}
         # https://github.com/actions/checkout
         uses: actions/checkout@v4
 
       - name: Generate .env and .htpasswd file
+        if: ${{ contains(github.event.pull_request.labels.*.name, 'pullpreview') }}
         env:
           ENV_VARS: ${{ secrets.ENV_VARS }}
           BASIC_AUTH: ${{ secrets.PULLPREVIEW_BASIC_AUTH }}
@@ -64,7 +66,7 @@ jobs:
           echo "$BASIC_AUTH" > .htpasswd
 
       - name: Download passed artifact.
-        if: ${{ inputs.ARTIFACT_NAME }}
+        if: ${{ inputs.ARTIFACT_NAME && contains(github.event.pull_request.labels.*.name, 'pullpreview') }}
         # https://github.com/actions/download-artifact
         uses: actions/download-artifact@v4
         with:
@@ -78,6 +80,7 @@ jobs:
           name: ${{ inputs.ARTIFACT_NAME }}
 
       - name: Boot PullPreview staging environment
+        if: ${{ contains(github.event.pull_request.labels.*.name, 'pullpreview') || github.event.action == 'unlabeled' || github.event.action == 'closed' }}
         id: pullpreview
         # https://github.com/pullpreview/action
         uses: pullpreview/action@v5
@@ -86,7 +89,7 @@ jobs:
           admins: ${{ inputs.PULLPREVIEW_ADMINS }}
           # Use the cidrs option to restrict access to the live environments to specific IP ranges
           cidrs: "0.0.0.0/0"
-          compose_files: docker-compose.pullpreview.yml
+          compose_files: compose.pullpreview.yml
           # The preview URL will target this port
           default_port: 80
           # Use a 512MB RAM instance type instead of the default 2GB
@@ -99,10 +102,11 @@ jobs:
           AWS_REGION: "eu-central-1"
 
   comment-connection-information:
-    if: ${{ github.event.action == 'labeled' || github.event.action == 'synchronize' }}
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'pullpreview') }}
     runs-on: ubuntu-latest
     timeout-minutes: 2
     needs: deploy
+
     steps:
       - name: Find Comment
         # https://github.com/peter-evans/find-comment

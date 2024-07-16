@@ -3,11 +3,16 @@ name: Docker Image CI
 on:
   release:
     types: [ published ]
+  # For Pull Request images:
+#  pull_request:
+#    types: [ labeled, synchronize, closed ]
 
 jobs:
   build-push-docker-image:
     name: Build, test and push docker image
+    # https://github.com/cybex-gmbh/github-workflows/blob/main/.github/workflows/docker-build-push.yml
     uses: cybex-gmbh/github-workflows/.github/workflows/docker-build-push.yml@main
     with:
       DOCKER_REPOSITORY: cybexwebdev/yourRepository
+#      DOCKERFILE_PATH: ./path/to/Dockerfile
     secrets: inherit
