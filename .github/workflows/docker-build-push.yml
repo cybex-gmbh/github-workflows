@@ -74,7 +74,7 @@ jobs:
           short-description: ${{ github.event.repository.description }}
 
   pr-image:
-    if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'pullpreview') }}
+    if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'pullpreview') && github.event.action != 'closed' }}
     runs-on: ubuntu-latest
 
     steps:
