@@ -17,6 +17,14 @@ on:
         description: The name of an Artifact which will be extracted while preserving file paths.
         required: false
         type: string
+      DNS:
+        description: A custom domain which will be used for the preview environment.
+        required: false
+        type: string
+      MAX_DOMAIN_LENGTH:
+        description: The maximum length which will be used for the fully qualified domain name.
+        required: false
+        type: number
     secrets:
       ENV_VARS:
         description: Variables which should be written into the .env file.
@@ -96,6 +104,10 @@ jobs:
           instance_type: ${{ inputs.INSTANCE_TYPE }}
           # Ports to open on the server
           ports: 80, 443
+          # Use a custom domain for the preview environment
+          dns: ${{ inputs.DNS }}
+          # Maximum length of fully qualified domain name. Cannot be greater than 62 characters.
+          max_domain_length: ${{ inputs.MAX_DOMAIN_LENGTH }}
         env:
           AWS_ACCESS_KEY_ID: "${{ secrets.PULLPREVIEW_AWS_ACCESS_KEY_ID }}"
           AWS_SECRET_ACCESS_KEY: "${{ secrets.PULLPREVIEW_AWS_SECRET_ACCESS_KEY }}"
