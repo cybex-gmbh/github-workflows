@@ -3,6 +3,20 @@ name: Setup environment and execute tests for a Laravel project
 on:
   workflow_call:
     inputs:
+      DATABASE_IMAGE:
+        description: The Docker image to use for the database.
+        required: false
+        type: string
+        default: mysql:8.0
+      DATABASE_NAME:
+        description: The name of the database.
+        required: true
+        type: string
+      DATABASE_OPTIONS:
+        description: The options to use for the database, such as health check.
+        required: false
+        type: string
+        default: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
       PHP_VERSION:
         description: The PHP version to execute the tests for.
         required: true
@@ -13,10 +27,6 @@ on:
         type: string
       DEPENDENCY_VERSION:
         description: The dependency version to execute the tests for.
-        required: true
-        type: string
-      MYSQL_DATABASE:
-        description: The name of the MySQL database.
         required: true
         type: string
       TEST_COMMANDS:
@@ -35,14 +45,18 @@ jobs:
   execute-tests:
     runs-on: ubuntu-latest
     services:
-      mysql:
-        image: mysql:8.0
+      database:
+        image: ${{ inputs.DATABASE_IMAGE }}
         env:
+          # MySQL
           MYSQL_ALLOW_EMPTY_PASSWORD: yes
-          MYSQL_DATABASE: ${{ inputs.MYSQL_DATABASE }}
+          MYSQL_DATABASE: ${{ inputs.DATABASE_NAME }}
+          # PostgreSQL
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: ${{ inputs.DATABASE_NAME }}
         ports:
           - 3306
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+        options: ${{ inputs.DATABASE_OPTIONS }}
 
     name: PHP ${{ inputs.PHP_VERSION }} with Laravel ${{ inputs.LARAVEL_VERSION }} (${{ inputs.DEPENDENCY_VERSION }})
     steps:
@@ -87,4 +101,4 @@ jobs:
       - name: Execute tests
         run: ${{ inputs.TEST_COMMANDS }}
         env:
-          DB_PORT: ${{ job.services.mysql.ports[3306] }}
+          DB_PORT: ${{ job.services.database.ports[3306] }}
