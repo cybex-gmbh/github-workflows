@@ -20,9 +20,9 @@ jobs:
         laravel: [ 11.* ]
         dependency-version: [ prefer-stable ]
     with:
+      DATABASE_NAME: myproject_test
       PHP_VERSION: ${{ matrix.php }}
       LARAVEL_VERSION: ${{ matrix.laravel }}
       DEPENDENCY_VERSION: ${{ matrix.dependency-version }}
-      MYSQL_DATABASE: myproject_test
 #     TEST_COMMANDS: vendor/bin/phpunit -c phpunit-ci.xml.dist
 #     LINUX_PACKAGES: imagemagick jpegoptim optipng pngquant gifsicle webp ffmpeg
