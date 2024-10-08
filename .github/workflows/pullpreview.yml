@@ -18,6 +18,12 @@ on:
         required: false
         type: string
     secrets:
+      DOCKERHUB_USERNAME:
+        description: The Docker Hub username.
+        required: false
+      DOCKERHUB_TOKEN_READONLY:
+        description: A read-only token to download images from private repositories.
+        required: false
       ENV_VARS:
         description: Variables which should be written into the .env file.
         required: false
@@ -85,6 +91,7 @@ jobs:
         # https://github.com/pullpreview/action
         uses: pullpreview/action@v5
         with:
+          registries: docker://${{ secrets.DOCKERHUB_USERNAME }}:${{ secrets.DOCKERHUB_TOKEN_READONLY }}@docker.io
           # Those GitHub users will have SSH access to the servers
           admins: ${{ inputs.PULLPREVIEW_ADMINS }}
           # Use the cidrs option to restrict access to the live environments to specific IP ranges

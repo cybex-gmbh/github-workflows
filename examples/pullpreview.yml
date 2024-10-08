@@ -51,6 +51,9 @@ jobs:
 #      INSTANCE_TYPE: large
       ARTIFACT_NAME: hello-world
     secrets:
+      # If you need to access private Docker repositories.
+#      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+#      DOCKERHUB_TOKEN_READONLY: ${{ secrets.DOCKERHUB_TOKEN_READONLY }}
       ENV_VARS: |
         A_DOTENV_VARIABLE="${{ secrets.A_REPOSITORY_SECRET }}"
         ANOTHER_DOTENV_VARIABLE="${{ secrets.AN_ORGANIZATION_SECRET }}"
