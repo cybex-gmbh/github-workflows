@@ -17,12 +17,14 @@ on:
         description: The name of an Artifact which will be extracted while preserving file paths.
         required: false
         type: string
-      DNS:
+      DOMAIN:
         description: A custom domain which will be used for the preview environment.
         required: false
         type: string
       MAX_DOMAIN_LENGTH:
-        description: The maximum length which will be used for the fully qualified domain name.
+        description:
+          The maximum length which will be used for the fully qualified domain name. 
+          The subdomain created by PullPreview will be shortened so that it fits into the specified maximum length.
         required: false
         type: number
     secrets:
@@ -105,7 +107,7 @@ jobs:
           # Ports to open on the server
           ports: 80, 443
           # Use a custom domain for the preview environment
-          dns: ${{ inputs.DNS }}
+          dns: ${{ inputs.DOMAIN && inputs.DOMAIN || 'my.preview.run' }}
           # Maximum length of fully qualified domain name. Cannot be greater than 62 characters.
           max_domain_length: ${{ inputs.MAX_DOMAIN_LENGTH }}
         env:
