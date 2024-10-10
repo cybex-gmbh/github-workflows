@@ -49,6 +49,8 @@ jobs:
     with:
       PULLPREVIEW_ADMINS: jheusinger, gael-connan-cybex, holyfabi, lupinitylabs, mszulik
 #      INSTANCE_TYPE: large
+#      DOMAIN: example.com
+#      MAX_DOMAIN_LENGTH: 30
       ARTIFACT_NAME: hello-world
     secrets:
       ENV_VARS: |
