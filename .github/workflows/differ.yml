@@ -35,6 +35,6 @@ jobs:
       - name: Create branch
         run: |
           git config --global --add safe.directory $(realpath .)
-          git checkout -b "${{ inputs.branch }}"
+          git checkout -b scaffold/"${{ inputs.branch }}"
           git commit "inital commit"
           git push
