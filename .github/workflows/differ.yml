@@ -35,6 +35,8 @@ jobs:
       - name: Create branch
         run: |
           git config --global --add safe.directory $(realpath .)
+          git config --global user.email "github-runner@example.com"
+          git config --global user.name "Github Runner"
           git checkout -b scaffold/"${{ inputs.branch }}"
           git commit -m "inital commit"
           git push
