@@ -38,4 +38,5 @@ jobs:
           git config --global user.email "github-runner@example.com"
           git config --global user.name "Github Runner"
           git checkout -b scaffold/"${{ inputs.branch }}"
+          git push --set-upstream origin scaffold/"${{ inputs.branch }}"
           git push
