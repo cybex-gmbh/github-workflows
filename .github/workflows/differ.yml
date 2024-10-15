@@ -36,5 +36,5 @@ jobs:
         run: |
           git config --global --add safe.directory $(realpath .)
           git checkout -b scaffold/"${{ inputs.branch }}"
-          git commit "inital commit"
+          git commit -m "inital commit"
           git push
