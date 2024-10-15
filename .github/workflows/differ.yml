@@ -36,6 +36,8 @@ jobs:
         with:
           repository: "${{ inputs.repository }}"
           ref: "${{ inputs.branch }}"
+
+      - name: Create branch
         run: |
           git checkout -b "${{ inputs.branch }}"
           git commit "inital commit"
