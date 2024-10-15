@@ -39,5 +39,4 @@ jobs:
           git config --global user.name "Github Runner"
           git checkout -b scaffold/"${{ inputs.branch }}"
           git remote set-url origin ${{ github.server_url }}/${{ github.repository }}
-          git push --set-upstream origin scaffold/"${{ inputs.branch }}"
-          git push
+          git push --no-thin --set-upstream origin scaffold/"${{ inputs.branch }}"
