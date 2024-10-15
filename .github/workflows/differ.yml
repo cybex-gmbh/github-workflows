@@ -15,18 +15,13 @@ on:
         type: string
 
 jobs:
-  deploy:
+  create-branch:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
       contents: read # to fetch code (actions/checkout)
-      deployments: write # to delete deployments
       pull-requests: write # to remove labels
       statuses: write # to create commit status
-    outputs:
-      PULLPREVIEW_URL: ${{ steps.pullpreview.outputs.url }}
-      PULLPREVIEW_HOST: ${{ steps.pullpreview.outputs.host }}
-      PULLPREVIEW_USERNAME: ${{ steps.pullpreview.outputs.username }}
 
     steps:
       - name: Checkout GitHub repository
