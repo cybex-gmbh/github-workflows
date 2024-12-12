@@ -12,6 +12,11 @@ on:
         description: The name of the database.
         required: true
         type: string
+      DATABASE_PORT:
+        description: The port of the database.
+        required: false
+        type: string
+        default: '3306'
       DATABASE_OPTIONS:
         description: The options to use for the database, such as health check.
         required: false
@@ -55,7 +60,7 @@ jobs:
           POSTGRES_HOST_AUTH_METHOD: trust
           POSTGRES_DB: ${{ inputs.DATABASE_NAME }}
         ports:
-          - 3306
+          - ${{ inputs.DATABASE_PORT }}
         options: ${{ inputs.DATABASE_OPTIONS }}
 
     name: PHP ${{ inputs.PHP_VERSION }} with Laravel ${{ inputs.LARAVEL_VERSION }} (${{ inputs.DEPENDENCY_VERSION }})
@@ -101,4 +106,4 @@ jobs:
       - name: Execute tests
         run: ${{ inputs.TEST_COMMANDS }}
         env:
-          DB_PORT: ${{ job.services.database.ports[3306] }}
+          DB_PORT: ${{ job.services.database.ports[inputs.DATABASE_PORT] }}
