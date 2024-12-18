@@ -8,44 +8,13 @@ on:
   pull_request:
   workflow_dispatch:
 
-env:
-  MYSQL_IMAGE: mysql:8.0
-  MYSQL_PORT: 3306
-  MYSQL_DB_OPTIONS: "--health-cmd=\"mysqladmin ping\" --health-interval=10s --health-timeout=5s --health-retries=3"
-  MYSQL_PHPUNIT_CONFIG: "phpunit-ci-mysql.xml.dist"
-  POSTGRES_IMAGE: postgres:17
-  POSTGRES_PORT: 5432
-  POSTGRES_DB_OPTIONS: "--health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 3"
-  POSTGRES_PHPUNIT_CONFIG: "phpunit-ci-postgres.xml.dist"
-
 jobs:
-  # Environment variables are not available in the matrix context, so we have to define them as outputs.
-  prepare:
-    name: Prepare environment
-    runs-on: ubuntu-latest
-    outputs:
-      MYSQL_IMAGE: ${{ env.MYSQL_IMAGE }}
-      MYSQL_PORT: ${{ env.MYSQL_PORT }}
-      MYSQL_DB_OPTIONS: ${{ env.MYSQL_DB_OPTIONS }}
-      MYSQL_PHPUNIT_CONFIG: ${{ env.MYSQL_PHPUNIT_CONFIG }}
-      POSTGRES_IMAGE: ${{ env.POSTGRES_IMAGE }}
-      POSTGRES_PORT: ${{ env.POSTGRES_PORT }}
-      POSTGRES_DB_OPTIONS: ${{ env.POSTGRES_DB_OPTIONS }}
-      POSTGRES_PHPUNIT_CONFIG: ${{ env.POSTGRES_PHPUNIT_CONFIG }}
-    steps:
-      # Placeholder because a job needs a step.
-      - run: echo "null"
-
-  execute-tests:
-    name: Setup testing environment and execute tests
-    needs: prepare
-    # https://github.com/cybex-gmbh/github-workflows/blob/main/.github/workflows/tests.yml
-    uses: cybex-gmbh/github-workflows/.github/workflows/tests.yml@main
+  mysql-tests:
+    name: MySQL
+    # The matrix can optionally be extracted to its own reusable workflow to consolidate the configuration.
     strategy:
       fail-fast: true
       matrix:
-        db-image: [ "${{ needs.prepare.outputs.MYSQL_IMAGE }}", "${{ needs.prepare.outputs.POSTGRES_IMAGE }}" ]
-        db-options: [ "${{ needs.prepare.outputs.MYSQL_DB_OPTIONS }}", "${{ needs.prepare.outputs.POSTGRES_DB_OPTIONS }}" ]
         php: [ 8.1, 8.2, 8.3 ]
         laravel: [ 9.*, 10.*, 11.* ]
         dependency-version: [ prefer-stable ]
@@ -54,17 +23,38 @@ jobs:
             laravel: 9.*
           - php: 8.1
             laravel: 11.*
-          - db-image: "${{ needs.prepare.outputs.MYSQL_IMAGE }}"
-            db-options: "${{ needs.prepare.outputs.POSTGRES_DB_OPTIONS }}"
-          - db-image: "${{ needs.prepare.outputs.POSTGRES_IMAGE }}"
-            db-options: "${{ needs.prepare.outputs.MYSQL_DB_OPTIONS }}"
+    uses: cybex-gmbh/github-workflows/.github/workflows/tests.yml@main
     with:
-      DATABASE_IMAGE: ${{ matrix.db-image }}
       DATABASE_NAME: myproject_test
-      DATABASE_PORT: ${{ matrix.db-image == needs.prepare.outputs.MYSQL_IMAGE && needs.prepare.outputs.MYSQL_PORT || needs.prepare.outputs.POSTGRES_PORT }}
-      DATABASE_OPTIONS: ${{ matrix.db-options }}
       PHP_VERSION: ${{ matrix.php }}
       LARAVEL_VERSION: ${{ matrix.laravel }}
       DEPENDENCY_VERSION: ${{ matrix.dependency-version }}
-      TEST_COMMANDS: vendor/bin/phpunit -c ${{ matrix.db-image == needs.prepare.outputs.MYSQL_IMAGE && needs.prepare.outputs.MYSQL_PHPUNIT_CONFIG || needs.prepare.outputs.POSTGRES_PHPUNIT_CONFIG }}
+
+  postgres-tests:
+    name: PostgreSQL
+    # The matrix can optionally be extracted to its own reusable workflow to consolidate the configuration.
+    strategy:
+      fail-fast: true
+      matrix:
+        php: [ 8.1, 8.2, 8.3 ]
+        laravel: [ 9.*, 10.*, 11.* ]
+        dependency-version: [ prefer-stable ]
+        exclude:
+          - php: 8.3
+            laravel: 9.*
+          - php: 8.1
+            laravel: 11.*
+    uses: cybex-gmbh/github-workflows/.github/workflows/tests.yml@main
+    with:
+      DATABASE_IMAGE: postgres:17
+      DATABASE_NAME: myproject_test
+      DATABASE_PORT: 5432
+      DATABASE_USERNAME: postgres
+      DATABASE_CONNECTION: pgsql
+#      DATABASE_HOST: 127.0.0.1
+      DATABASE_OPTIONS: "--health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 3"
+      PHP_VERSION: ${{ matrix.php }}
+      LARAVEL_VERSION: ${{ matrix.laravel }}
+      DEPENDENCY_VERSION: ${{ matrix.dependency-version }}
+#      TEST_COMMANDS: vendor/bin/phpunit -c phpunit-ci.xml.dist
 #      LINUX_PACKAGES: imagemagick jpegoptim optipng pngquant gifsicle webp ffmpeg
