@@ -103,6 +103,7 @@ jobs:
 
       # The GitHub runner PostgreSQL version is outdated, and will not work with databases using the latest PostgreSQL version.
       - name: Update PostgreSQL
+        if: ${{ contains(inputs.DATABASE_IMAGE, 'postgres') }}
         uses: tj-actions/install-postgresql@v3
         with:
           postgresql-version: 17
