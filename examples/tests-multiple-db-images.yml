@@ -1,0 +1,60 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - main
+      - release/*
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  mysql-tests:
+    name: MySQL
+    # The matrix can optionally be extracted to its own reusable workflow to consolidate the configuration.
+    strategy:
+      fail-fast: true
+      matrix:
+        php: [ 8.1, 8.2, 8.3 ]
+        laravel: [ 9.*, 10.*, 11.* ]
+        dependency-version: [ prefer-stable ]
+        exclude:
+          - php: 8.3
+            laravel: 9.*
+          - php: 8.1
+            laravel: 11.*
+    uses: cybex-gmbh/github-workflows/.github/workflows/tests.yml@main
+    with:
+      DATABASE_NAME: myproject_test
+      PHP_VERSION: ${{ matrix.php }}
+      LARAVEL_VERSION: ${{ matrix.laravel }}
+      DEPENDENCY_VERSION: ${{ matrix.dependency-version }}
+
+  postgres-tests:
+    name: PostgreSQL
+    # The matrix can optionally be extracted to its own reusable workflow to consolidate the configuration.
+    strategy:
+      fail-fast: true
+      matrix:
+        php: [ 8.1, 8.2, 8.3 ]
+        laravel: [ 9.*, 10.*, 11.* ]
+        dependency-version: [ prefer-stable ]
+        exclude:
+          - php: 8.3
+            laravel: 9.*
+          - php: 8.1
+            laravel: 11.*
+    uses: cybex-gmbh/github-workflows/.github/workflows/tests.yml@main
+    with:
+      DATABASE_IMAGE: postgres:17
+      DATABASE_NAME: myproject_test
+      DATABASE_PORT: 5432
+      DATABASE_USERNAME: postgres
+      DATABASE_CONNECTION: pgsql
+#      DATABASE_HOST: 127.0.0.1
+      DATABASE_OPTIONS: "--health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 3"
+      PHP_VERSION: ${{ matrix.php }}
+      LARAVEL_VERSION: ${{ matrix.laravel }}
+      DEPENDENCY_VERSION: ${{ matrix.dependency-version }}
+#      TEST_COMMANDS: vendor/bin/phpunit -c phpunit-ci.xml.dist
+#      LINUX_PACKAGES: imagemagick jpegoptim optipng pngquant gifsicle webp ffmpeg
