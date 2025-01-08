@@ -101,7 +101,7 @@ jobs:
         # https://github.com/pullpreview/action
         uses: pullpreview/action@v5
         with:
-          registries: docker://${{ secrets.DOCKERHUB_USERNAME }}:${{ secrets.DOCKERHUB_TOKEN_READONLY }}@docker.io
+          registries: ${{ env.SHOULD_LOGIN_TO_DOCKER && env.DOCKER_REGISTRY_URI || '' }}
           # Those GitHub users will have SSH access to the servers
           admins: ${{ inputs.PULLPREVIEW_ADMINS }}
           # Use the cidrs option to restrict access to the live environments to specific IP ranges
@@ -121,6 +121,8 @@ jobs:
           AWS_ACCESS_KEY_ID: "${{ secrets.PULLPREVIEW_AWS_ACCESS_KEY_ID }}"
           AWS_SECRET_ACCESS_KEY: "${{ secrets.PULLPREVIEW_AWS_SECRET_ACCESS_KEY }}"
           AWS_REGION: "eu-central-1"
+          SHOULD_LOGIN_TO_DOCKER: ${{ secrets.DOCKERHUB_USERNAME && secrets.DOCKERHUB_TOKEN_READONLY }}
+          DOCKER_REGISTRY_URI: docker://${{ secrets.DOCKERHUB_USERNAME }}:${{ secrets.DOCKERHUB_TOKEN_READONLY }}@docker.io
 
   comment-connection-information:
     if: ${{ contains(github.event.pull_request.labels.*.name, 'pullpreview') && github.event.action != 'unlabeled' && github.event.action != 'closed' }}
