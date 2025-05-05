@@ -27,6 +27,16 @@ on:
           The subdomain created by PullPreview will be shortened so that it fits into the specified maximum length.
         required: false
         type: number
+      ENV_BASE_FILE_NAME:
+        description: The name of the .env file which will be used as base to generate the ENV_FILE_NAME file.
+        required: false
+        default: .env.example
+        type: string
+      ENV_FILE_NAME:
+        description: The name of the .env file in which the passed ENV_VARS will be echoed.
+        required: false
+        default: .env
+        type: string
     secrets:
       DOCKERHUB_USERNAME:
         description: The Docker Hub username.
@@ -71,13 +81,15 @@ jobs:
         if: ${{ contains(github.event.pull_request.labels.*.name, 'pullpreview') && github.event.action != 'unlabeled' && github.event.action != 'closed' }}
         env:
           ENV_VARS: ${{ secrets.ENV_VARS }}
+          ENV_BASE_FILE_NAME: ${{ inputs.ENV_BASE_FILE_NAME }}
+          ENV_FILE_NAME: ${{ inputs.ENV_FILE_NAME }}
           BASIC_AUTH: ${{ secrets.PULLPREVIEW_BASIC_AUTH }}
         run: |
-          cp .env.example .env
-          echo "APP_ENV=production" >> .env
-          echo "APP_DEBUG=false" >> .env
+          cp -n "$ENV_BASE_FILE_NAME" "$ENV_FILE_NAME"
+          echo "APP_ENV=production" >> "$ENV_FILE_NAME"
+          echo "APP_DEBUG=false" >> "$ENV_FILE_NAME"
           for keyValuePair in $ENV_VARS; do
-            echo "$keyValuePair" >> .env
+            echo "$keyValuePair" >> "$ENV_FILE_NAME"
           done
           echo "$BASIC_AUTH" > .htpasswd
 
