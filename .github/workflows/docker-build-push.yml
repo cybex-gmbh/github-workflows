@@ -157,7 +157,7 @@ jobs:
           tags: ${{ steps.meta-branch.outputs.tags }}
 
   delete-branch-image:
-    if: ${{ github.event_name == 'delete' && github.event.ref_type == 'branch'  && startsWith(github.ref_name, 'preview/') }}
+    if: ${{ github.event_name == 'delete' && github.event.ref_type == 'branch' && startsWith(github.event.ref, 'preview/') }}
     runs-on: ubuntu-latest
 
     steps:
