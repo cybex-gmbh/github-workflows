@@ -6,6 +6,11 @@ on:
   # For Pull Request images:
 #  pull_request:
 #    types: [ labeled, synchronize, closed ]
+  # For branch preview images:
+#  delete:
+#  push:
+#    branches:
+#      - 'preview/**'
 
 jobs:
   build-push-docker-image:
