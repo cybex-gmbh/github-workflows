@@ -21,3 +21,10 @@ jobs:
       DOCKER_REPOSITORY: cybexwebdev/yourRepository
 #      DOCKERFILE_PATH: ./path/to/Dockerfile
     secrets: inherit
+    # If you want to pass build args
+#    secrets:
+#      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+#      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+#      BUILD_ARGS: |
+#        BUILD_ARG_1=value
+#        BUILD_ARG_2=value
