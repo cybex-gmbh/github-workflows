@@ -12,6 +12,16 @@ on:
         required: false
         type: string
         default: ./docker/Dockerfile
+    secrets:
+      DOCKERHUB_USERNAME:
+        description: The Docker Hub username.
+        required: true
+      DOCKERHUB_TOKEN:
+        description: A token to push images to the Docker Hub repository.
+        required: true
+      BUILD_ARGS:
+        description: Variables which will be passed as build arguments to the Dockerfile.
+        required: false
 
 jobs:
   production-image:
@@ -62,6 +72,7 @@ jobs:
           push: true
           file: ${{ inputs.DOCKERFILE_PATH }}
           tags: ${{ steps.meta-production.outputs.tags }}
+          build-args: ${{ secrets.BUILD_ARGS }}
 
       - name: Sync README with Docker Hub description
         if: ${{ github.ref_name == env.LATEST_TAG }}
@@ -107,6 +118,7 @@ jobs:
           push: true
           file: ${{ inputs.DOCKERFILE_PATH }}
           tags: ${{ steps.meta-pr.outputs.tags }}
+          build-args: ${{ secrets.BUILD_ARGS }}
 
   delete-pr-image:
     if: ${{ github.event_name == 'pull_request' && github.event.action == 'closed' }}
@@ -122,7 +134,7 @@ jobs:
           curl -s -X DELETE -H "Authorization: Bearer ${TOKEN}" https://hub.docker.com/v2/repositories/${{ inputs.DOCKER_REPOSITORY }}/tags/${MODIFIED_BRANCH_NAME}/
 
   branch-image:
-    if: ${{ github.event_name == 'push' && startsWith(github.ref_name, 'preview/') }}
+    if: ${{ github.event_name == 'push' && (startsWith(github.ref_name, 'preview/') || github.ref_name == 'release') }}
     runs-on: ubuntu-latest
 
     steps:
@@ -155,6 +167,7 @@ jobs:
           push: true
           file: ${{ inputs.DOCKERFILE_PATH }}
           tags: ${{ steps.meta-branch.outputs.tags }}
+          build-args: ${{ secrets.BUILD_ARGS }}
 
   delete-branch-image:
     if: ${{ github.event_name == 'delete' && github.event.ref_type == 'branch' && startsWith(github.event.ref, 'preview/') }}
