@@ -25,7 +25,7 @@ on:
 
 jobs:
   production-image:
-    if: ${{ github.event_name == 'release' || (github.event_name == 'push' && github.ref_name == 'release') }}
+    if: ${{ github.event_name == 'release' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -134,7 +134,7 @@ jobs:
           curl -s -X DELETE -H "Authorization: Bearer ${TOKEN}" https://hub.docker.com/v2/repositories/${{ inputs.DOCKER_REPOSITORY }}/tags/${MODIFIED_BRANCH_NAME}/
 
   branch-image:
-    if: ${{ github.event_name == 'push' && startsWith(github.ref_name, 'preview/') }}
+    if: ${{ github.event_name == 'push' && (startsWith(github.ref_name, 'preview/') || github.ref_name == 'release') }}
     runs-on: ubuntu-latest
 
     steps:

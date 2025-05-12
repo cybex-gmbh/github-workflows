@@ -3,6 +3,10 @@ name: Docker Image CI
 on:
   release:
     types: [ published ]
+  # For images on push to 'release' branch (only works for 'release'):
+#  push:
+#    branches:
+#      - release
   # For Pull Request images:
 #  pull_request:
 #    types: [ labeled, synchronize, closed ]
