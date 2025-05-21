@@ -37,6 +37,11 @@ on:
         required: false
         default: .env
         type: string
+      SHUTDOWN_AFTER:
+        description: The TTL for the PullPreview deployment (e.g. "10h", "5d", "infinite").
+        required: false
+        default: "1d"
+        type: string
     secrets:
       DOCKERHUB_USERNAME:
         description: The Docker Hub username.
@@ -129,6 +134,7 @@ jobs:
           dns: ${{ inputs.DOMAIN && inputs.DOMAIN || 'my.preview.run' }}
           # Maximum length of fully qualified domain name. Cannot be greater than 62 characters.
           max_domain_length: ${{ inputs.MAX_DOMAIN_LENGTH }}
+          ttl: ${{ inputs.SHUTDOWN_AFTER }}
         env:
           AWS_ACCESS_KEY_ID: "${{ secrets.PULLPREVIEW_AWS_ACCESS_KEY_ID }}"
           AWS_SECRET_ACCESS_KEY: "${{ secrets.PULLPREVIEW_AWS_SECRET_ACCESS_KEY }}"
