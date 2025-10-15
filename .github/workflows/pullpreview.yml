@@ -40,7 +40,7 @@ on:
       SHUTDOWN_AFTER:
         description: The TTL for the PullPreview deployment (e.g. "10h", "5d", "infinite").
         required: false
-        default: "1d"
+        default: "11h"
         type: string
     secrets:
       DOCKERHUB_USERNAME:
