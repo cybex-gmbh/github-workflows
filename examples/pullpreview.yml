@@ -51,6 +51,7 @@ jobs:
 #      INSTANCE_TYPE: large
 #      DOMAIN: example.com
 #      MAX_DOMAIN_LENGTH: 30
+#      SHUTDOWN_AFTER: "2d"
       ARTIFACT_NAME: hello-world
     secrets:
       # If you need to access private Docker repositories.
