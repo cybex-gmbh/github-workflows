@@ -159,6 +159,10 @@ jobs:
             --arg buildDate "$(date --iso-8601=seconds --utc)" \
             '{gitRepo: $repo, gitBranch: $branch, gitRevision: $revision, }' > protector_metadata.json
 
+      - name: Verify Metadata
+        shell: bash
+        run: cat protector_metadata.json
+
       - name: Get branch name
         run: echo "BRANCH_NAME=$(echo ${{ github.ref_name }} | tr / -)" >> $GITHUB_ENV
 
