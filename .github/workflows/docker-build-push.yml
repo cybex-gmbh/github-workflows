@@ -152,11 +152,11 @@ jobs:
       - name: Protector Metadata
         shell: bash
         run: >
-          jq -n 
-            --arg repo ${{ github.repository }}
-            --arg branch ${{ github.ref_name }}
-            --arg revision ${{ github.sha }}
-            --arg buildDate $(date)
+          jq -n \
+            --arg repo ${{ github.repository }} \
+            --arg branch ${{ github.ref_name }} \
+            --arg revision ${{ github.sha }} \
+            --arg buildDate $(date) \
             '{gitRepo: $repo, gitBranch: $branch, gitRevision: $revision, }' > protector_metadata.json
 
       - name: Get branch name
