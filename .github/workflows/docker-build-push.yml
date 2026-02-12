@@ -151,21 +151,7 @@ jobs:
 
       - name: Protector Metadata
         run: |
-          jq -n \
-             --arg repoVar ${{ github.repository }} \
-             --arg branchShell $(git rev-parse --abbrev-ref HEAD) \
-             --arg branchVarRefName ${{ github.ref_name }} \
-             --arg revisionShell $(git rev-parse HEAD) \
-             --arg revisionVarSha ${{ github.sha }} \
-             --arg revisionDate "$(git show -s --format=%ci HEAD)" \
-             '{ \
-                gitBranchShell: $branchShell, \
-                gitBranchVar: $branchVarRefName, \
-                gitRevisionShell: $revisionShell, \
-                gitRevisionVar: $revisionVarSha, \
-                gitRevisionDate: $revisionDate \
-              }' \
-             > protector_metadata.json
+          jq -n --arg repoVar ${{ github.repository }} --arg branchShell $(git rev-parse --abbrev-ref HEAD) --arg branchVarRefName ${{ github.ref_name }} --arg revisionShell $(git rev-parse HEAD) --arg revisionVarSha ${{ github.sha }} --arg revisionDate "$(git show -s --format=%ci HEAD)" '{gitBranchShell: $branchShell, gitBranchVar: $branchVarRefName, gitRevisionShell: $revisionShell, gitRevisionVar: $revisionVarSha, gitRevisionDate: $revisionDate}' > protector_metadata.json
 
       - name: Get branch name
         run: echo "BRANCH_NAME=$(echo ${{ github.ref_name }} | tr / -)" >> $GITHUB_ENV
