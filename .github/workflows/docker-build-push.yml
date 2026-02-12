@@ -156,7 +156,7 @@ jobs:
             --arg repo ${{ github.repository }} \
             --arg branch ${{ github.ref_name }} \
             --arg revision ${{ github.sha }} \
-            --arg buildDate $(date) \
+            --arg buildDate "$(date --iso-8601=seconds --utc)" \
             '{gitRepo: $repo, gitBranch: $branch, gitRevision: $revision, }' > protector_metadata.json
 
       - name: Get branch name
