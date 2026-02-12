@@ -150,6 +150,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Protector Metadata
+        shell: bash
         run: |
           jq -n \ 
              --arg repoVar ${{ github.repository }} --arg branchShell $(git rev-parse --abbrev-ref HEAD) --arg branchVarRefName ${{ github.ref_name }} --arg revisionShell $(git rev-parse HEAD) --arg revisionVarSha ${{ github.sha }} --arg revisionDate "$(git show -s --format=%ci HEAD)" '{gitBranchShell: $branchShell, gitBranchVar: $branchVarRefName, gitRevisionShell: $revisionShell, gitRevisionVar: $revisionVarSha, gitRevisionDate: $revisionDate}' > protector_metadata.json
