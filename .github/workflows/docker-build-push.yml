@@ -151,9 +151,13 @@ jobs:
 
       - name: Protector Metadata
         shell: bash
-        run: |
-          jq -n \ 
-             --arg repoVar ${{ github.repository }} --arg branchShell $(git rev-parse --abbrev-ref HEAD) --arg branchVarRefName ${{ github.ref_name }} --arg revisionShell $(git rev-parse HEAD) --arg revisionVarSha ${{ github.sha }} --arg revisionDate "$(git show -s --format=%ci HEAD)" '{gitBranchShell: $branchShell, gitBranchVar: $branchVarRefName, gitRevisionShell: $revisionShell, gitRevisionVar: $revisionVarSha, gitRevisionDate: $revisionDate}' > protector_metadata.json
+        run: >
+          jq -n 
+            --arg repo ${{ github.repository }}
+            --arg branch ${{ github.ref_name }}
+            --arg revision ${{ github.sha }}
+            --arg buildDate $(date)
+            '{gitRepo: $repo, gitBranch: $branch, gitRevision: $revision, }' > protector_metadata.json
 
       - name: Get branch name
         run: echo "BRANCH_NAME=$(echo ${{ github.ref_name }} | tr / -)" >> $GITHUB_ENV
