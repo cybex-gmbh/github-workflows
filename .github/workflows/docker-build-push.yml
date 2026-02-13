@@ -163,6 +163,14 @@ jobs:
         shell: bash
         run: cat protector_metadata.json
 
+      - name: PWD
+        shell: bash
+        run: pwd
+
+      - name: PWD
+        shell: bash
+        run: ls -al
+
       - name: Get branch name
         run: echo "BRANCH_NAME=$(echo ${{ github.ref_name }} | tr / -)" >> $GITHUB_ENV
 
