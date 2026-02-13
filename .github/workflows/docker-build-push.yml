@@ -41,7 +41,7 @@ jobs:
             --arg branch ${{ github.ref_name }} \
             --arg revision ${{ github.sha }} \
             --arg buildDate "$(date --iso-8601=seconds --utc)" \
-            '{gitRepo: $repo, gitBranch: $branch, gitRevision: $revision, }' > protector_metadata.json
+            '{gitRepo: $repo, gitBranch: $branch, gitRevision: $revision, buildDate: $buildDate}' > protector_metadata.json
 
       - name: Login to Docker Hub
         # https://github.com/docker/login-action
@@ -112,7 +112,7 @@ jobs:
             --arg branch ${{ github.ref_name }} \
             --arg revision ${{ github.sha }} \
             --arg buildDate "$(date --iso-8601=seconds --utc)" \
-            '{gitRepo: $repo, gitBranch: $branch, gitRevision: $revision, }' > protector_metadata.json
+            '{gitRepo: $repo, gitBranch: $branch, gitRevision: $revision, buildDate: $buildDate}' > protector_metadata.json
 
       - name: Login to Docker Hub
         # https://github.com/docker/login-action
@@ -176,7 +176,7 @@ jobs:
             --arg branch ${{ github.ref_name }} \
             --arg revision ${{ github.sha }} \
             --arg buildDate "$(date --iso-8601=seconds --utc)" \
-            '{gitRepo: $repo, gitBranch: $branch, gitRevision: $revision, }' > protector_metadata.json
+            '{gitRepo: $repo, gitBranch: $branch, gitRevision: $revision, buildDate: $buildDate}' > protector_metadata.json
 
       - name: Login to Docker Hub
         # https://github.com/docker/login-action
