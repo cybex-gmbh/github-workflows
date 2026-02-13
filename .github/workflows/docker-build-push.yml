@@ -33,6 +33,16 @@ jobs:
         # https://github.com/actions/checkout
         uses: actions/checkout@v4
 
+      - name: Protector Metadata
+        shell: bash
+        run: >
+          jq -n \
+            --arg repo ${{ github.repository }} \
+            --arg branch ${{ github.ref_name }} \
+            --arg revision ${{ github.sha }} \
+            --arg buildDate "$(date --iso-8601=seconds --utc)" \
+            '{gitRepo: $repo, gitBranch: $branch, gitRevision: $revision, }' > protector_metadata.json
+
       - name: Login to Docker Hub
         # https://github.com/docker/login-action
         uses: docker/login-action@v3
@@ -73,6 +83,7 @@ jobs:
           file: ${{ inputs.DOCKERFILE_PATH }}
           tags: ${{ steps.meta-production.outputs.tags }}
           build-args: ${{ secrets.BUILD_ARGS }}
+          context: .
 
       - name: Sync README with Docker Hub description
         if: ${{ github.ref_name == env.LATEST_TAG }}
@@ -89,6 +100,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout GitHub repository
+        # https://github.com/actions/checkout
+        uses: actions/checkout@v4
+
+      - name: Protector Metadata
+        shell: bash
+        run: >
+          jq -n \
+            --arg repo ${{ github.repository }} \
+            --arg branch ${{ github.ref_name }} \
+            --arg revision ${{ github.sha }} \
+            --arg buildDate "$(date --iso-8601=seconds --utc)" \
+            '{gitRepo: $repo, gitBranch: $branch, gitRevision: $revision, }' > protector_metadata.json
+
       - name: Login to Docker Hub
         # https://github.com/docker/login-action
         uses: docker/login-action@v3
@@ -119,6 +144,7 @@ jobs:
           file: ${{ inputs.DOCKERFILE_PATH }}
           tags: ${{ steps.meta-pr.outputs.tags }}
           build-args: ${{ secrets.BUILD_ARGS }}
+          context: .
 
   delete-pr-image:
     if: ${{ github.event_name == 'pull_request' && github.event.action == 'closed' }}
@@ -138,13 +164,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Login to Docker Hub
-        # https://github.com/docker/login-action
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
       - name: Checkout GitHub repository
         # https://github.com/actions/checkout
         uses: actions/checkout@v4
@@ -159,17 +178,12 @@ jobs:
             --arg buildDate "$(date --iso-8601=seconds --utc)" \
             '{gitRepo: $repo, gitBranch: $branch, gitRevision: $revision, }' > protector_metadata.json
 
-      - name: Verify Metadata
-        shell: bash
-        run: cat protector_metadata.json
-
-      - name: PWD
-        shell: bash
-        run: pwd
-
-      - name: PWD
-        shell: bash
-        run: ls -al
+      - name: Login to Docker Hub
+        # https://github.com/docker/login-action
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Get branch name
         run: echo "BRANCH_NAME=$(echo ${{ github.ref_name }} | tr / -)" >> $GITHUB_ENV
