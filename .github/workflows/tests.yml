@@ -108,9 +108,12 @@ jobs:
       # The GitHub runner PostgreSQL version is outdated, and will not work with databases using the latest PostgreSQL version.
       - name: Update PostgreSQL
         if: ${{ contains(inputs.DATABASE_IMAGE, 'postgres') }}
-        uses: tj-actions/install-postgresql@v3
-        with:
-          postgresql-version: ${{ inputs.DATABASE_CLIENT_VERSION }}
+        run: |
+          sudo apt install -y postgresql-common
+          yes '' | sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh
+          sudo apt update
+          sudo apt install -o Dpkg::Options::="--force-overwrite" -y postgresql-${{ inputs.DATABASE_CLIENT_VERSION }}
+          echo "/usr/lib/postgresql/$INPUT_POSTGRESQL_VERSION/bin" >> "$GITHUB_PATH"
 
       - name: Get composer cache directory
         id: get-cache-dir
