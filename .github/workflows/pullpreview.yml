@@ -80,7 +80,7 @@ jobs:
       - name: Checkout GitHub repository
         if: ${{ contains(github.event.pull_request.labels.*.name, 'pullpreview') && github.event.action != 'unlabeled' && github.event.action != 'closed' }}
         # https://github.com/actions/checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Generate .env and .htpasswd file
         if: ${{ contains(github.event.pull_request.labels.*.name, 'pullpreview') && github.event.action != 'unlabeled' && github.event.action != 'closed' }}
@@ -101,14 +101,14 @@ jobs:
       - name: Download passed artifact.
         if: ${{ inputs.ARTIFACT_NAME && contains(github.event.pull_request.labels.*.name, 'pullpreview') && github.event.action != 'unlabeled' && github.event.action != 'closed' }}
         # https://github.com/actions/download-artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ${{ inputs.ARTIFACT_NAME }}
 
       - name: Delete passed artifact.
         if: ${{ inputs.ARTIFACT_NAME }}
         # https://github.com/GeekyEggo/delete-artifact
-        uses: geekyeggo/delete-artifact@v5
+        uses: geekyeggo/delete-artifact@v6
         with:
           name: ${{ inputs.ARTIFACT_NAME }}
 
@@ -116,7 +116,7 @@ jobs:
         if: ${{ contains(github.event.pull_request.labels.*.name, 'pullpreview') || github.event.action == 'unlabeled' || github.event.action == 'closed' }}
         id: pullpreview
         # https://github.com/pullpreview/action
-        uses: pullpreview/action@v5
+        uses: pullpreview/action@v6
         with:
           registries: ${{ env.SHOULD_LOGIN_TO_DOCKER && env.DOCKER_REGISTRY_URI || '' }}
           # Those GitHub users will have SSH access to the servers
@@ -151,7 +151,7 @@ jobs:
     steps:
       - name: Find Comment
         # https://github.com/peter-evans/find-comment
-        uses: peter-evans/find-comment@v3
+        uses: peter-evans/find-comment@v4
         id: find
         with:
           issue-number: ${{ github.event.pull_request.number }}
@@ -160,7 +160,7 @@ jobs:
 
       - name: Create or update comment
         # https://github.com/peter-evans/create-or-update-comment
-        uses: peter-evans/create-or-update-comment@v4
+        uses: peter-evans/create-or-update-comment@v5
         with:
           comment-id: ${{ steps.find.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}
