@@ -68,9 +68,7 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: read # to fetch code (actions/checkout)
-      deployments: write # to delete deployments
       pull-requests: write # to remove labels
-      statuses: write # to create commit status
     outputs:
       PULLPREVIEW_URL: ${{ steps.pullpreview.outputs.url }}
       PULLPREVIEW_HOST: ${{ steps.pullpreview.outputs.host }}
@@ -121,15 +119,9 @@ jobs:
           registries: ${{ env.SHOULD_LOGIN_TO_DOCKER && env.DOCKER_REGISTRY_URI || '' }}
           # Those GitHub users will have SSH access to the servers
           admins: ${{ inputs.PULLPREVIEW_ADMINS }}
-          # Use the cidrs option to restrict access to the live environments to specific IP ranges
-          cidrs: "0.0.0.0/0"
           compose_files: compose.pullpreview.yml
-          # The preview URL will target this port
-          default_port: 80
-          # Use a 512MB RAM instance type instead of the default 2GB
+          # nano, micro, small, medium, large, xlarge, 2xlarge, ...
           instance_type: ${{ inputs.INSTANCE_TYPE }}
-          # Ports to open on the server
-          ports: 80, 443
           # Use a custom domain for the preview environment
           dns: ${{ inputs.DOMAIN && inputs.DOMAIN || 'my.preview.run' }}
           # Maximum length of fully qualified domain name. Cannot be greater than 62 characters.
@@ -141,32 +133,3 @@ jobs:
           AWS_REGION: "eu-central-1"
           SHOULD_LOGIN_TO_DOCKER: ${{ secrets.DOCKERHUB_USERNAME && secrets.DOCKERHUB_TOKEN_READONLY }}
           DOCKER_REGISTRY_URI: docker://${{ secrets.DOCKERHUB_USERNAME }}:${{ secrets.DOCKERHUB_TOKEN_READONLY }}@docker.io
-
-  comment-connection-information:
-    if: ${{ contains(github.event.pull_request.labels.*.name, 'pullpreview') && github.event.action != 'unlabeled' && github.event.action != 'closed' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 2
-    needs: deploy
-
-    steps:
-      - name: Find Comment
-        # https://github.com/peter-evans/find-comment
-        uses: peter-evans/find-comment@v4
-        id: find
-        with:
-          issue-number: ${{ github.event.pull_request.number }}
-          comment-author: 'github-actions[bot]'
-          body-includes: ssh ${{ needs.deploy.outputs.PULLPREVIEW_USERNAME }}@
-
-      - name: Create or update comment
-        # https://github.com/peter-evans/create-or-update-comment
-        uses: peter-evans/create-or-update-comment@v5
-        with:
-          comment-id: ${{ steps.find.outputs.comment-id }}
-          issue-number: ${{ github.event.pull_request.number }}
-          body: |
-            ssh ${{ needs.deploy.outputs.PULLPREVIEW_USERNAME }}@${{ needs.deploy.outputs.PULLPREVIEW_HOST }}
-            URL: ${{ needs.deploy.outputs.PULLPREVIEW_URL }}
-          edit-mode: replace
-
-
