@@ -61,7 +61,7 @@ on:
           php artisan migrate:fresh --env=ci
           php artisan test --env=ci --no-coverage
       LINUX_PACKAGES:
-        description: A comma separated list of linux packages which should be installed.
+        description: A space separated list of linux packages which should be installed.
         required: false
         type: string
 
@@ -99,11 +99,9 @@ jobs:
 
       - name: Install additional packages
         if: ${{ inputs.LINUX_PACKAGES != '' }}
-        # https://github.com/awalsh128/cache-apt-pkgs-action
-        uses: awalsh128/cache-apt-pkgs-action@latest
-        with:
-          packages: ${{ inputs.LINUX_PACKAGES }}
-          version: ${{ inputs.PHP_VERSION }}
+        run: |
+          sudo apt update
+          sudo apt install -y --no-install-recommends ${{ inputs.LINUX_PACKAGES }}
 
       # The GitHub runner PostgreSQL version is outdated, and will not work with databases using the latest PostgreSQL version.
       - name: Update PostgreSQL
