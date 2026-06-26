@@ -102,7 +102,7 @@ jobs:
         # Brew is available in the GitHub Runner Ubuntu image, but not in the PATH.
         run: |
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" 
-          brew install ${{ inputs.LINUX_PACKAGES }}
+          brew install ${{ inputs.BREW_FORMULAS }}
 
       # The GitHub runner PostgreSQL version is outdated, and will not work with databases using the latest PostgreSQL version.
       - name: Update PostgreSQL
