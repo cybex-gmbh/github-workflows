@@ -60,8 +60,8 @@ on:
         default: |
           php artisan migrate:fresh --env=ci
           php artisan test --env=ci --no-coverage
-      LINUX_PACKAGES:
-        description: A space separated list of linux packages which should be installed.
+      BREW_FORMULAS:
+        description: A space separated list of brew formulas which should be installed.
         required: false
         type: string
 
@@ -98,10 +98,11 @@ jobs:
           coverage: none
 
       - name: Install additional packages
-        if: ${{ inputs.LINUX_PACKAGES != '' }}
+        if: ${{ inputs.BREW_FORMULAS != '' }}
+        # Brew is available in the GitHub Runner Ubuntu image, but not in the PATH.
         run: |
-          sudo apt update
-          sudo apt install -y --no-install-recommends ${{ inputs.LINUX_PACKAGES }}
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" 
+          brew install ${{ inputs.LINUX_PACKAGES }}
 
       # The GitHub runner PostgreSQL version is outdated, and will not work with databases using the latest PostgreSQL version.
       - name: Update PostgreSQL
