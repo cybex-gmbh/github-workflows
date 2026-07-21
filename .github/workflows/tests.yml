@@ -86,7 +86,7 @@ jobs:
     steps:
       - name: Checkout code
         # https://github.com/actions/checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup PHP
         # https://github.com/shivammathur/setup-php
@@ -122,7 +122,7 @@ jobs:
 
       - name: Cache composer dependencies
         # https://github.com/actions/cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ steps.get-cache-dir.outputs.directory }}
           key: dependencies-laravel-${{ inputs.LARAVEL_VERSION }}-php-${{ inputs.PHP_VERSION }}-composer-${{ hashFiles('composer.json') }}
