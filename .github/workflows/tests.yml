@@ -105,6 +105,8 @@ jobs:
           brew update
           brew upgrade
           brew install ${{ inputs.BREW_FORMULAS }}
+          # Add brew package install path to the PATH for subsequent steps.
+          echo "/home/linuxbrew/.linuxbrew/bin" >> "$GITHUB_PATH"
 
       # The GitHub runner PostgreSQL version is outdated, and will not work with databases using the latest PostgreSQL version.
       - name: Update PostgreSQL
