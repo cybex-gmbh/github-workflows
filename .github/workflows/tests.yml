@@ -60,8 +60,8 @@ on:
         default: |
           php artisan migrate:fresh --env=ci
           php artisan test --env=ci --no-coverage
-      LINUX_PACKAGES:
-        description: A comma separated list of linux packages which should be installed.
+      BREW_FORMULAS:
+        description: A space separated list of brew formulas which should be installed.
         required: false
         type: string
 
@@ -86,7 +86,7 @@ jobs:
     steps:
       - name: Checkout code
         # https://github.com/actions/checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup PHP
         # https://github.com/shivammathur/setup-php
@@ -98,12 +98,13 @@ jobs:
           coverage: none
 
       - name: Install additional packages
-        if: ${{ inputs.LINUX_PACKAGES != '' }}
-        # https://github.com/awalsh128/cache-apt-pkgs-action
-        uses: awalsh128/cache-apt-pkgs-action@latest
-        with:
-          packages: ${{ inputs.LINUX_PACKAGES }}
-          version: ${{ inputs.PHP_VERSION }}
+        if: ${{ inputs.BREW_FORMULAS != '' }}
+        # Brew is available in the GitHub Runner Ubuntu image, but not in the PATH.
+        run: |
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          brew install ${{ inputs.BREW_FORMULAS }}
+          # Add brew package install path to the PATH for subsequent steps.
+          echo "/home/linuxbrew/.linuxbrew/bin" >> "$GITHUB_PATH"
 
       # The GitHub runner PostgreSQL version is outdated, and will not work with databases using the latest PostgreSQL version.
       - name: Update PostgreSQL
@@ -121,7 +122,7 @@ jobs:
 
       - name: Cache composer dependencies
         # https://github.com/actions/cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ steps.get-cache-dir.outputs.directory }}
           key: dependencies-laravel-${{ inputs.LARAVEL_VERSION }}-php-${{ inputs.PHP_VERSION }}-composer-${{ hashFiles('composer.json') }}

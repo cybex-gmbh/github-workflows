@@ -51,10 +51,10 @@ jobs:
       DATABASE_PORT: 5432
       DATABASE_USERNAME: postgres
       DATABASE_CONNECTION: pgsql
-#      DATABASE_HOST: 127.0.0.1
+      DATABASE_HOST: localhost # For some reason postgres runs extremely slow when not using localhost, while mysql and mariadb don't accept localhost
       DATABASE_OPTIONS: "--health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 3"
       PHP_VERSION: ${{ matrix.php }}
       LARAVEL_VERSION: ${{ matrix.laravel }}
       DEPENDENCY_VERSION: ${{ matrix.dependency-version }}
 #      TEST_COMMANDS: vendor/bin/phpunit -c phpunit-ci.xml.dist
-#      LINUX_PACKAGES: imagemagick jpegoptim optipng pngquant gifsicle webp ffmpeg
+#      BREW_FORMULAS: ghostscript jpegoptim optipng pngquant gifsicle webp ffmpeg mariadb

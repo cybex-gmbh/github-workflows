@@ -16,8 +16,8 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        php: [ 8.2, 8.3 ]
-        laravel: [ 11.* ]
+        php: [ 8.4, 8.5 ]
+        laravel: [ 13.* ]
         dependency-version: [ prefer-stable ]
     with:
       DATABASE_NAME: myproject_test
@@ -25,4 +25,4 @@ jobs:
       LARAVEL_VERSION: ${{ matrix.laravel }}
       DEPENDENCY_VERSION: ${{ matrix.dependency-version }}
 #      TEST_COMMANDS: vendor/bin/phpunit -c phpunit-ci.xml.dist
-#      LINUX_PACKAGES: imagemagick jpegoptim optipng pngquant gifsicle webp ffmpeg
+#      BREW_FORMULAS: ghostscript jpegoptim optipng pngquant gifsicle webp ffmpeg mariadb
