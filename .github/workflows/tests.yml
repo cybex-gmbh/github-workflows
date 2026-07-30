@@ -102,6 +102,7 @@ jobs:
         # Brew is available in the GitHub Runner Ubuntu image, but not in the PATH.
         run: |
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          brew update
           brew install ${{ inputs.BREW_FORMULAS }}
           # Add brew package install path to the PATH for subsequent steps.
           echo "/home/linuxbrew/.linuxbrew/bin" >> "$GITHUB_PATH"
