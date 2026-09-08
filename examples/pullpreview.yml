@@ -8,13 +8,12 @@ jobs:
   # Optional, provide files as an artifact.
   # https://docs.github.com/en/actions/using-workflows/storing-workflow-data-as-artifacts
   upload-artifact:
-    if: ${{ contains(github.event.pull_request.labels.*.name, 'pullpreview') || github.event.action == 'unlabeled' || github.event.action == 'closed' }}
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'pullpreview') && github.event.action != 'unlabeled' && github.event.action != 'closed' }}
     runs-on: ubuntu-latest
     steps:
     - name: Checkout file.
-      if: ${{ contains(github.event.pull_request.labels.*.name, 'pullpreview') && github.event.action != 'unlabeled' && github.event.action != 'closed' }}
       # https://github.com/actions/checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
       with:
         sparse-checkout: |
           storage/app/existingFile.txt
@@ -22,13 +21,11 @@ jobs:
         sparse-checkout-cone-mode: false
 
     - name: Create file.
-      if: ${{ contains(github.event.pull_request.labels.*.name, 'pullpreview') && github.event.action != 'unlabeled' && github.event.action != 'closed' }}
       run: echo "Hello World" > helloWorld.txt
 
     - name: Upload file as artifact.
-      if: ${{ contains(github.event.pull_request.labels.*.name, 'pullpreview') && github.event.action != 'unlabeled' && github.event.action != 'closed' }}
       # https://github.com/actions/upload-artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: hello-world
         path: |
@@ -37,11 +34,11 @@ jobs:
 
   deploy-staging-environment:
     needs: upload-artifact
+    # Always run this job, since it might need to destroy the staging environment.
+    if: ${{ !failure() && !cancelled() }}
     permissions:
       contents: read # to fetch code (actions/checkout)
-      deployments: write # to delete deployments
       pull-requests: write # to remove labels
-      statuses: write # to create commit status
 
     name: Deploy PullPreview staging environment
     # https://github.com/cybex-gmbh/github-workflows/blob/main/.github/workflows/pullpreview.yml

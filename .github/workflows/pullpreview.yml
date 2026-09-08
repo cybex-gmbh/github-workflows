@@ -42,6 +42,11 @@ on:
         required: false
         default: "11h"
         type: string
+      PRE_SCRIPT_PATH:
+        description: The path to a script which will be executed before the PullPreview deployment is started.
+        required: false
+        type: string
+        default: "pullpreview.pre-script.sh"
     secrets:
       DOCKERHUB_USERNAME:
         description: The Docker Hub username.
@@ -62,15 +67,16 @@ on:
         description: An AWS Secret Access Key with permissions to manage Lightsail instances.
         required: true
 
+env:
+  SHOULD_START_OR_SYNC_PULLPREVIEW: ${{ contains(github.event.pull_request.labels.*.name, 'pullpreview') && github.event.action != 'unlabeled' && github.event.action != 'closed' }}
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
       contents: read # to fetch code (actions/checkout)
-      deployments: write # to delete deployments
       pull-requests: write # to remove labels
-      statuses: write # to create commit status
     outputs:
       PULLPREVIEW_URL: ${{ steps.pullpreview.outputs.url }}
       PULLPREVIEW_HOST: ${{ steps.pullpreview.outputs.host }}
@@ -78,12 +84,12 @@ jobs:
 
     steps:
       - name: Checkout GitHub repository
-        if: ${{ contains(github.event.pull_request.labels.*.name, 'pullpreview') && github.event.action != 'unlabeled' && github.event.action != 'closed' }}
+        if: ${{ env.SHOULD_START_OR_SYNC_PULLPREVIEW == 'true' }}
         # https://github.com/actions/checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Generate .env and .htpasswd file
-        if: ${{ contains(github.event.pull_request.labels.*.name, 'pullpreview') && github.event.action != 'unlabeled' && github.event.action != 'closed' }}
+        if: ${{ env.SHOULD_START_OR_SYNC_PULLPREVIEW == 'true' }}
         env:
           ENV_VARS: ${{ secrets.ENV_VARS }}
           ENV_BASE_FILE_NAME: ${{ inputs.ENV_BASE_FILE_NAME }}
@@ -99,74 +105,40 @@ jobs:
           echo "$BASIC_AUTH" > .htpasswd
 
       - name: Download passed artifact.
-        if: ${{ inputs.ARTIFACT_NAME && contains(github.event.pull_request.labels.*.name, 'pullpreview') && github.event.action != 'unlabeled' && github.event.action != 'closed' }}
+        if: ${{ inputs.ARTIFACT_NAME && env.SHOULD_START_OR_SYNC_PULLPREVIEW == 'true' }}
         # https://github.com/actions/download-artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ${{ inputs.ARTIFACT_NAME }}
 
       - name: Delete passed artifact.
         if: ${{ inputs.ARTIFACT_NAME }}
         # https://github.com/GeekyEggo/delete-artifact
-        uses: geekyeggo/delete-artifact@v5
+        uses: geekyeggo/delete-artifact@v6
         with:
           name: ${{ inputs.ARTIFACT_NAME }}
 
-      - name: Boot PullPreview staging environment
+      - name: Boot or sync PullPreview staging environment
         if: ${{ contains(github.event.pull_request.labels.*.name, 'pullpreview') || github.event.action == 'unlabeled' || github.event.action == 'closed' }}
         id: pullpreview
         # https://github.com/pullpreview/action
-        uses: pullpreview/action@v5
+        uses: pullpreview/action@v6
         with:
           registries: ${{ env.SHOULD_LOGIN_TO_DOCKER && env.DOCKER_REGISTRY_URI || '' }}
           # Those GitHub users will have SSH access to the servers
           admins: ${{ inputs.PULLPREVIEW_ADMINS }}
-          # Use the cidrs option to restrict access to the live environments to specific IP ranges
-          cidrs: "0.0.0.0/0"
           compose_files: compose.pullpreview.yml
-          # The preview URL will target this port
-          default_port: 80
-          # Use a 512MB RAM instance type instead of the default 2GB
+          # nano, micro, small, medium, large, xlarge, 2xlarge, ...
           instance_type: ${{ inputs.INSTANCE_TYPE }}
-          # Ports to open on the server
-          ports: 80, 443
           # Use a custom domain for the preview environment
           dns: ${{ inputs.DOMAIN && inputs.DOMAIN || 'my.preview.run' }}
           # Maximum length of fully qualified domain name. Cannot be greater than 62 characters.
           max_domain_length: ${{ inputs.MAX_DOMAIN_LENGTH }}
           ttl: ${{ inputs.SHUTDOWN_AFTER }}
+          pre_script: ${{ inputs.PRE_SCRIPT_PATH }}
         env:
           AWS_ACCESS_KEY_ID: "${{ secrets.PULLPREVIEW_AWS_ACCESS_KEY_ID }}"
           AWS_SECRET_ACCESS_KEY: "${{ secrets.PULLPREVIEW_AWS_SECRET_ACCESS_KEY }}"
           AWS_REGION: "eu-central-1"
           SHOULD_LOGIN_TO_DOCKER: ${{ secrets.DOCKERHUB_USERNAME && secrets.DOCKERHUB_TOKEN_READONLY }}
           DOCKER_REGISTRY_URI: docker://${{ secrets.DOCKERHUB_USERNAME }}:${{ secrets.DOCKERHUB_TOKEN_READONLY }}@docker.io
-
-  comment-connection-information:
-    if: ${{ contains(github.event.pull_request.labels.*.name, 'pullpreview') && github.event.action != 'unlabeled' && github.event.action != 'closed' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 2
-    needs: deploy
-
-    steps:
-      - name: Find Comment
-        # https://github.com/peter-evans/find-comment
-        uses: peter-evans/find-comment@v3
-        id: find
-        with:
-          issue-number: ${{ github.event.pull_request.number }}
-          comment-author: 'github-actions[bot]'
-          body-includes: ssh ${{ needs.deploy.outputs.PULLPREVIEW_USERNAME }}@
-
-      - name: Create or update comment
-        # https://github.com/peter-evans/create-or-update-comment
-        uses: peter-evans/create-or-update-comment@v4
-        with:
-          comment-id: ${{ steps.find.outputs.comment-id }}
-          issue-number: ${{ github.event.pull_request.number }}
-          body: |
-            ssh ${{ needs.deploy.outputs.PULLPREVIEW_USERNAME }}@${{ needs.deploy.outputs.PULLPREVIEW_HOST }}
-            URL: ${{ needs.deploy.outputs.PULLPREVIEW_URL }}
-          edit-mode: replace
-
-
