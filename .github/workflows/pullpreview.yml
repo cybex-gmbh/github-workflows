@@ -84,12 +84,12 @@ jobs:
 
     steps:
       - name: Checkout GitHub repository
-        if: ${{ env.SHOULD_START_OR_SYNC_PULLPREVIEW }}
+        if: ${{ env.SHOULD_START_OR_SYNC_PULLPREVIEW == 'true' }}
         # https://github.com/actions/checkout
         uses: actions/checkout@v7
 
       - name: Generate .env and .htpasswd file
-        if: ${{ env.SHOULD_START_OR_SYNC_PULLPREVIEW }}
+        if: ${{ env.SHOULD_START_OR_SYNC_PULLPREVIEW == 'true' }}
         env:
           ENV_VARS: ${{ secrets.ENV_VARS }}
           ENV_BASE_FILE_NAME: ${{ inputs.ENV_BASE_FILE_NAME }}
@@ -105,7 +105,7 @@ jobs:
           echo "$BASIC_AUTH" > .htpasswd
 
       - name: Download passed artifact.
-        if: ${{ inputs.ARTIFACT_NAME && env.SHOULD_START_OR_SYNC_PULLPREVIEW }}
+        if: ${{ inputs.ARTIFACT_NAME && env.SHOULD_START_OR_SYNC_PULLPREVIEW == 'true' }}
         # https://github.com/actions/download-artifact
         uses: actions/download-artifact@v8
         with:
