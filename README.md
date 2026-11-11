@@ -46,19 +46,37 @@ For this workflow to work, the following GitHub secrets have to be defined:
 - DOCKERHUB_USERNAME
 - DOCKERHUB_TOKEN
 
-Also, the Docker Hub repository has to be passed as input. See the workflow input section for details.
+Docker Hub credentials need push permission and, for preview cleanup, tag-delete permission.
+
+Refer to the [examples/build.yml](examples/build.yml) for an example of how to call this workflow.
 
 #### Production Images
 
-Working with GitHub releases is required as the semantic versioning is used for image tags. The `latest` tag will only be applied, if the release is marked as
-latest in GitHub.
+Production images require published GitHub releases.
 
-Additionally, the repository README file and description will be synchronized to Docker Hub.
+Existing releases can be rebuilt by manually dispatching a workflow run with the desired tag. 
+The action will determine which docker tags to build and publish:
+
+| Published tag | Other published tags | Tags updated          |
+|---------------|----------------------|-----------------------|
+| `1.1.2`       | `1.2.0`              | `1.1`, not `1`        |
+| `1.2.0`       | `1.2.1`              | Neither `1.2` nor `1` |
+| `1.2.1`       | No newer `1.x.x`     | `1.2` and `1`         |
+
+The `latest` tag follows GitHub's designated latest published stable release. 
+Only that release synchronizes its README and repository description to Docker Hub.
 
 #### Pull Request Images
 
-When this workflow is called from a pull request with a `pullpreview` label, the image will be tagged with the branch name.
+When this workflow is called from a pull request with a `create docker image` label,
+the image will be tagged with `branch-` followed by the normalized branch name ('/' replaced by '-').
 The image will be deleted after the pull request is closed.
+
+#### Branch preview images
+
+Only pushes to `preview/**` branches create branch-named preview images.
+Deleting a `preview/**` branch deletes its preview image.
+PR and branch tags use the same normalization on creation and deletion.
 
 ### [Pullpreview](https://github.com/pullpreview/action)
 
