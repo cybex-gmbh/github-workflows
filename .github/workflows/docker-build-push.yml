@@ -9,9 +9,17 @@ on:
         required: true
         type: string
       DOCKERFILE_PATH:
-        description: The Dockerfile path relative to the source repository.
+        description: The Dockerfile path relative to the source repository. Only used when BAKE_FILE is not set.
         type: string
         default: ./docker/prod/Dockerfile
+      BAKE_FILE:
+        description: Optional Bake file relative to the source repository. If set, DOCKERFILE_PATH and BUILD_ARGS are ignored.
+        type: string
+        default: ''
+      BAKE_TARGETS:
+        description: Bake targets or groups, pass as multiline.
+        type: string
+        default: default
       BUILD_TAG:
         description: Tag to build, e.g. 1, 1.2 or 1.2.3. Major needs to match with selected release branch.
         type: string
@@ -209,7 +217,8 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push production image
+      - if: inputs.BAKE_FILE == ''
+        name: Build and push production image
         # https://github.com/docker/build-push-action
         uses: docker/build-push-action@v7
         with:
@@ -222,6 +231,22 @@ jobs:
           build-args: ${{ secrets.BUILD_ARGS }}
           cache-from: type=registry,ref=${{ inputs.DOCKER_REPOSITORY }}:buildcache-v${{ needs.production-tags.outputs.major }}
           cache-to: type=registry,ref=${{ inputs.DOCKER_REPOSITORY }}:buildcache-v${{ needs.production-tags.outputs.major }},mode=max
+
+      - if: inputs.BAKE_FILE != ''
+        name: Bake and push production images
+        # https://github.com/docker/bake-action
+        uses: docker/bake-action@v7
+        env:
+          CACHE_REF: ${{ inputs.DOCKER_REPOSITORY }}:buildcache-v${{ needs.production-tags.outputs.major }}
+        with:
+          source: .
+          files: |
+            ${{ inputs.BAKE_FILE }}
+            ${{ steps.meta.outputs.bake-file }}
+          targets: ${{ inputs.BAKE_TARGETS }}
+          push: true
+          sbom: true
+          provenance: true
 
       - if: needs.production-tags.outputs.should_publish_latest == 'true'
         name: Sync latest README to Docker Hub
@@ -268,7 +293,14 @@ jobs:
           tag="${IMAGE_TAG##*:}"
           echo "cache_ref=${IMAGE_TAG%:*}:buildcache-$tag" >> "$GITHUB_OUTPUT"
 
-      - if: env.ONLY_CLEANUP == 'false'
+      - if: inputs.BAKE_FILE != ''
+        # Deleted branches no longer have a ref to checkout, we need to use the default branch's Bake definition.
+        # Should some suffixes or prefixes differ, we cannot reliably delete the preview images.
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event_name == 'delete' && github.event.repository.default_branch || github.event.action == 'closed' && github.event.pull_request.head.sha || github.ref }}
+
+      - if: env.ONLY_CLEANUP == 'false' || inputs.BAKE_FILE != ''
         # https://github.com/docker/setup-buildx-action
         uses: docker/setup-buildx-action@v4
 
@@ -279,7 +311,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - if: env.ONLY_CLEANUP == 'false'
+      - if: env.ONLY_CLEANUP == 'false' && inputs.BAKE_FILE == ''
         name: Build and push preview image
         # https://github.com/docker/build-push-action
         uses: docker/build-push-action@v7
@@ -293,14 +325,63 @@ jobs:
           cache-from: type=registry,ref=${{ steps.cache.outputs.cache_ref }}
           cache-to: type=registry,ref=${{ steps.cache.outputs.cache_ref }},mode=max
 
+      - if: env.ONLY_CLEANUP == 'false' && inputs.BAKE_FILE != ''
+        name: Bake and push preview images
+        uses: docker/bake-action@v7
+        env:
+          CACHE_REF: ${{ steps.cache.outputs.cache_ref }}
+        with:
+          source: .
+          files: |
+            ${{ inputs.BAKE_FILE }}
+            ${{ steps.meta.outputs.bake-file }}
+          targets: ${{ inputs.BAKE_TARGETS }}
+          push: true
+          sbom: true
+          provenance: true
+
+      ######## Cleanup ########
+
+      # We need to get tags for the actual images and for the cache-to references from the bake file.
+      - if: env.ONLY_CLEANUP == 'true' && inputs.BAKE_FILE != ''
+        name: Resolve Bake preview tags for cleanup
+        id: bake-cleanup
+        env:
+          BAKE_FILE: ${{ inputs.BAKE_FILE }}
+          BAKE_TARGETS: ${{ inputs.BAKE_TARGETS }}
+          METADATA_FILE: ${{ steps.meta.outputs.bake-file }}
+          CACHE_REF: ${{ steps.cache.outputs.cache_ref }}
+        run: |
+          mapfile -t targets < <(printf '%s\n' "$BAKE_TARGETS" | sed '/^[[:space:]]*$/d')
+          tags=$(docker buildx bake -f "$BAKE_FILE" -f "$METADATA_FILE" --print "${targets[@]}" |
+            jq -ec '
+              [.target[] | .tags[]?, (.["cache-to"][]? | select(.type == "registry") | .ref)]
+              | unique
+              | if length == 0 then 
+                  error("Bake targets have no preview tags to delete") 
+                else 
+                  . 
+                end
+            ')
+          echo "tags=$tags" >> "$GITHUB_OUTPUT"
+
       - if: env.ONLY_CLEANUP == 'true'
         name: Delete preview image and cache tags
         env:
           IMAGE_TAG: ${{ steps.meta.outputs.tags }}
           CACHE_REF: ${{ steps.cache.outputs.cache_ref }}
+          BAKE_FILE: ${{ inputs.BAKE_FILE }}
+          BAKE_TAGS: ${{ steps.bake-cleanup.outputs.tags }}
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
         run: |
+          if [[ -z "$BAKE_FILE" ]]; then
+            refs=("$IMAGE_TAG" "$CACHE_REF")
+          else
+            tags=$(jq -er '.[]' <<< "$BAKE_TAGS")
+            mapfile -t refs <<< "$tags"
+          fi
+
           credentials=$(jq -n --arg username "$DOCKERHUB_USERNAME" --arg password "$DOCKERHUB_TOKEN" \
             '{username: $username, password: $password}')
           token=$(curl -fsS -H 'Content-Type: application/json' -d "$credentials" \
@@ -308,7 +389,7 @@ jobs:
           
           echo "::add-mask::$token"
           
-          for ref in "$IMAGE_TAG" "$CACHE_REF"; do
+          for ref in "${refs[@]}"; do
             status=$(curl -sS -o /dev/null -w '%{http_code}' -X DELETE -H "Authorization: Bearer $token" \
               "https://hub.docker.com/v2/repositories/${ref%:*}/tags/${ref##*:}/")
             [[ "$status" == 204 || "$status" == 404 ]] || {

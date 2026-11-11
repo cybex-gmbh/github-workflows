@@ -28,6 +28,8 @@ jobs:
       DOCKER_REPOSITORY: cybexwebdev/your-repository
       BUILD_TAG: ${{ inputs.tag || '' }}
 #      DOCKERFILE_PATH: ./path/to/Dockerfile
+      # If you want to use Docker Bake
+#      BAKE_FILE: docker-bake.hcl
     secrets: inherit
     # If you want to pass build args
 #    secrets:

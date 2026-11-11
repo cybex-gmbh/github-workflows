@@ -48,7 +48,8 @@ For this workflow to work, the following GitHub secrets have to be defined:
 
 Docker Hub credentials need push permission and, for preview cleanup, tag-delete permission.
 
-Refer to the [examples/build.yml](examples/build.yml) for an example of how to call this workflow.
+Refer to [examples/build.yml](examples/build.yml) for an example of how to call this workflow.
+Refer to [examples/docker-bake.hcl](examples/docker-bake.hcl) for an example of how to define a bake file to use with this action.
 
 #### Production Images
 
