@@ -3,27 +3,33 @@ name: Docker Image CI
 on:
   release:
     types: [ published ]
-  # For images on push to 'release' branch (only works for 'release'):
-#  push:
-#    branches:
-#      - release
-  # For Pull Request images:
-#  pull_request:
-#    types: [ labeled, synchronize, closed ]
-  # For branch preview images (only works for the provided pattern):
-#  delete:
-#  push:
-#    branches:
-#      - 'preview/**'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag to build, e.g. 1, 1.2 or 1.2.3. Major needs to match with selected release branch.
+        required: true
+        type: string
+  push:
+    branches:
+      - 'preview/**'
+  pull_request:
+    types: [ labeled, synchronize, closed ]
+  delete:
+
+permissions:
+  contents: read
 
 jobs:
-  build-push-docker-image:
-    name: Build, test and push docker image
+  build:
+    name: Build and push Docker images
     # https://github.com/cybex-gmbh/github-workflows/blob/main/.github/workflows/docker-build-push.yml
     uses: cybex-gmbh/github-workflows/.github/workflows/docker-build-push.yml@main
     with:
-      DOCKER_REPOSITORY: cybexwebdev/yourRepository
+      DOCKER_REPOSITORY: cybexwebdev/your-repository
+      BUILD_TAG: ${{ inputs.tag || '' }}
 #      DOCKERFILE_PATH: ./path/to/Dockerfile
+      # If you want to use Docker Bake
+#      BAKE_FILE: docker-bake.hcl
     secrets: inherit
     # If you want to pass build args
 #    secrets:
