@@ -49,17 +49,14 @@ defaults:
     shell: bash
 
 jobs:
-  production-tags:
+  production-image:
     if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
 
-    outputs:
-      version: ${{ steps.tags.outputs.version }}
-      major: ${{ steps.tags.outputs.major }}
-      minor: ${{ steps.tags.outputs.minor }}
-      should_publish_major: ${{ steps.tags.outputs.should_publish_major }}
-      should_publish_minor: ${{ steps.tags.outputs.should_publish_minor }}
-      should_publish_latest: ${{ steps.tags.outputs.should_publish_latest }}
+    concurrency:
+      group: docker-production-${{ inputs.DOCKER_REPOSITORY }}
+      cancel-in-progress: false
+      queue: max
 
     steps:
       - if: github.event_name == 'release'
@@ -178,20 +175,10 @@ jobs:
             | "\(.key)=\(.value)"
           ' <<< "$RELEASE_TAGS" >> "$GITHUB_OUTPUT"
 
-  production-image:
-    needs: production-tags
-    runs-on: ubuntu-latest
-
-    concurrency:
-      group: docker-production-${{ inputs.DOCKER_REPOSITORY }}
-      cancel-in-progress: false
-      queue: max
-
-    steps:
       # https://github.com/actions/checkout
       - uses: actions/checkout@v7
         with:
-          ref: refs/tags/${{ needs.production-tags.outputs.version }}
+          ref: refs/tags/${{ steps.tags.outputs.version }}
 
       # https://github.com/docker/setup-buildx-action
       - uses: docker/setup-buildx-action@v4
@@ -205,10 +192,10 @@ jobs:
           images: ${{ inputs.DOCKER_REPOSITORY }}
           flavor: latest=false
           tags: |
-            type=raw,value=latest,enable=${{ needs.production-tags.outputs.should_publish_latest }}
-            type=semver,pattern={{major}},value=${{ needs.production-tags.outputs.version }},enable=${{ needs.production-tags.outputs.should_publish_major }}
-            type=semver,pattern={{major}}.{{minor}},value=${{ needs.production-tags.outputs.version }},enable=${{ needs.production-tags.outputs.should_publish_minor }}
-            type=semver,pattern={{version}},value=${{ needs.production-tags.outputs.version }}
+            type=raw,value=latest,enable=${{ steps.tags.outputs.should_publish_latest }}
+            type=semver,pattern={{major}},value=${{ steps.tags.outputs.version }},enable=${{ steps.tags.outputs.should_publish_major }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ steps.tags.outputs.version }},enable=${{ steps.tags.outputs.should_publish_minor }}
+            type=semver,pattern={{version}},value=${{ steps.tags.outputs.version }}
             type=sha
 
       # https://github.com/docker/login-action
@@ -229,15 +216,15 @@ jobs:
           provenance: true
           tags: ${{ steps.meta.outputs.tags }}
           build-args: ${{ secrets.BUILD_ARGS }}
-          cache-from: type=registry,ref=${{ inputs.DOCKER_REPOSITORY }}:buildcache-v${{ needs.production-tags.outputs.major }}
-          cache-to: type=registry,ref=${{ inputs.DOCKER_REPOSITORY }}:buildcache-v${{ needs.production-tags.outputs.major }},mode=max
+          cache-from: type=registry,ref=${{ inputs.DOCKER_REPOSITORY }}:buildcache-v${{ steps.tags.outputs.major }}
+          cache-to: type=registry,ref=${{ inputs.DOCKER_REPOSITORY }}:buildcache-v${{ steps.tags.outputs.major }},mode=max
 
       - if: inputs.BAKE_FILE != ''
         name: Bake and push production images
         # https://github.com/docker/bake-action
         uses: docker/bake-action@v7
         env:
-          CACHE_REF: ${{ inputs.DOCKER_REPOSITORY }}:buildcache-v${{ needs.production-tags.outputs.major }}
+          CACHE_REF: ${{ inputs.DOCKER_REPOSITORY }}:buildcache-v${{ steps.tags.outputs.major }}
         with:
           source: .
           files: |
@@ -248,7 +235,7 @@ jobs:
           sbom: true
           provenance: true
 
-      - if: needs.production-tags.outputs.should_publish_latest == 'true'
+      - if: steps.tags.outputs.should_publish_latest == 'true'
         name: Sync latest README to Docker Hub
         # https://github.com/peter-evans/dockerhub-description
         uses: peter-evans/dockerhub-description@v5
