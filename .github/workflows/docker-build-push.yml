@@ -20,11 +20,6 @@ on:
         description: Bake targets or groups, pass as multiline.
         type: string
         default: default
-      BUILD_TAG:
-        description: Tag to build, e.g. 1, 1.2 or 1.2.3. Major needs to match with selected release branch.
-        type: string
-        default: ''
-
     secrets:
       DOCKERHUB_USERNAME:
         required: true
@@ -39,10 +34,8 @@ permissions:
 env:
   # Branch: E.g. release/v1.
   RELEASE_BRANCH_PATTERN: '^refs/heads/release/v(0|[1-9][0-9]*)$'
-  # Requested tags: E.g. 1, 1.2, 1.2.1, ...
-  REQUESTED_TAG_PATTERN: '^(0|[1-9][0-9]*)(\.(0|[1-9][0-9]*)){0,2}$'
-  # Published versions: E.g. 1.2.1.
-  VERSION_TAG_PATTERN: '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'
+  # Published tag: E.g. v1.2.1.
+  VERSION_TAG_PATTERN: '^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'
 
 defaults:
   run:
@@ -59,126 +52,64 @@ jobs:
       queue: max
 
     steps:
-      - if: github.event_name == 'release'
-        name: Retrieve release tag
-        env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
-        run: |
-          # Strip leading "v".
-          version="${RELEASE_TAG#v}"
-          
-          # =~ operator is used for regex matching in bash.
-          [[ "$version" =~ $VERSION_TAG_PATTERN ]] || {
-            echo "::error::Release tags must specify a version";
-            exit 1;
-          }
-          
-          echo "REQUESTED_TAG=$version" >> "$GITHUB_ENV"
-
+      # We need to initially checkout the repository to determine the latest tag of the release branch for manual builds.
       - if: github.event_name == 'workflow_dispatch'
-        name: Retrieve workflow_dispatch tag
-        env:
-          BUILD_TAG: ${{ inputs.BUILD_TAG }}
-        run: |
-          # =~ operator is used for regex matching in bash.
-          [[ "$GITHUB_REF" =~ $RELEASE_BRANCH_PATTERN ]] || {
-            echo "::error::Manual builds must run on a release branch";
-            exit 1;
-          }
-          
-          # Uses the previous regex match to extract the major version from the branch name.
-          major="${BASH_REMATCH[1]}"
-          
-          # Sanitize and validate the BUILD_TAG input. Strip leading and trailing whitespace, then strip leading "v".
-          tag=$(printf '%s' "$BUILD_TAG" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-          tag="${tag#v}"
-          [[ "$tag" =~ $REQUESTED_TAG_PATTERN ]] || {
-            echo "::error::Provide exactly one tag, e.g. 1, 1.2 or 1.2.1";
-            exit 1;
-          }
-          
-          # The requested tag must match the release branch major the workflow dispatch was triggered from.
-          [[ "${tag%%.*}" == "$major" ]] || {
-            echo "::error::$tag must belong to release/v$major";
-            exit 1;
-          }
-          
-          echo "REQUESTED_TAG=$tag" >> "$GITHUB_ENV"
+      # https://github.com/actions/checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: '0'
 
-      # We fetch all published releases to determine the latest release
-      # and whether the requested tag is the latest for its major/minor version,
-      # so that we can determine which docker image tags to publish.
-      # We add a "parts" field to each release, which is an array of the major, minor, and patch numbers as integers, so that we can sort and compare them.
-      - name: Fetch published GitHub release tags
-        id: releases
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Determine build tag
         run: |
-          releases=$(gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/releases?per_page=100" |
-            jq -c --arg pattern "$VERSION_TAG_PATTERN" '
-              flatten
-              | map(
-                  select(.draft == false and .prerelease == false)
-                  | {tag: .tag_name, version: (.tag_name | ltrimstr("v"))}
-                  | select(.version | test($pattern))
-                  | .parts = (.version | split(".") | map(tonumber))
-                )
-              # Sorted from lowest to highest.
-              | sort_by(.parts)
-            ')
-          
-          echo "release_tags=$releases" >> "$GITHUB_OUTPUT"
-          
-          if jq -e 'length > 0' <<< "$releases" > /dev/null; then
-            echo "latest_release_tag=$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq .tag_name)" >> "$GITHUB_OUTPUT"
+          if [[ "$GITHUB_EVENT_NAME" == 'release' ]]; then
+            echo "TAG=${GITHUB_REF#refs/tags/}" >> "$GITHUB_ENV"
           fi
-
-      - name: Select release and Docker tags
-        id: tags
-        env:
-          RELEASE_TAGS: ${{ steps.releases.outputs.release_tags }}
-          LATEST_RELEASE_TAG: ${{ steps.releases.outputs.latest_release_tag }}
-        run: |
-          # Filter the GitHub release tags to find the latest that matches the requested tag.
-          # E.g. requested tag 1.2 will match 1.2.0, 1.2.1, etc., and we select the latest one.
-          selected_release=$(
-            jq -ce --arg tag "$REQUESTED_TAG" '
-              ($tag | split(".") | map(tonumber)) as $requested
-              | map(select(.parts[:($requested | length)] == $requested))
-              | if length == 0 then
-                  error("No published release matches " + $tag)
-                else
-                  # Last element is the latest release.
-                  .[-1]
-                end
-            ' <<< "$RELEASE_TAGS"
-          )
-
-          # For the selected release, determine whether it is the latest for its major and minor versions,
-          # and whether it is the latest release overall, so that we can determine which Docker image tags to publish.
-          jq -r \
-            --argjson selected_release "$selected_release" \
-            --arg latest_release_tag "$LATEST_RELEASE_TAG" '
-            def is_newest_in_release_line($count):
-              map(select(.parts[:$count] == $selected_release.parts[:$count]))
-              | max_by(.parts)
-              | .parts == $selected_release.parts;
-            {
-              major: $selected_release.parts[0],
-              minor: ($selected_release.parts[:2] | map(tostring) | join(".")),
-              version: $selected_release.tag,
-              should_publish_major: is_newest_in_release_line(1),
-              should_publish_minor: is_newest_in_release_line(2),
-              should_publish_latest: ($selected_release.tag == $latest_release_tag)
-            }
-            | to_entries[]
-            | "\(.key)=\(.value)"
-          ' <<< "$RELEASE_TAGS" >> "$GITHUB_OUTPUT"
+          
+          if [[ "$GITHUB_EVENT_NAME" == 'workflow_dispatch' ]]; then
+            echo "TAG=$(git tag --merged HEAD --sort=-version:refname | head -n 1)" >> "$GITHUB_ENV"
+          fi
 
       # https://github.com/actions/checkout
       - uses: actions/checkout@v7
         with:
-          ref: refs/tags/${{ steps.tags.outputs.version }}
+          ref: refs/tags/${{ env.TAG }}
+          fetch-depth: '0'
+
+      # This check is not possible with release events, as we don't get the info from which branch the release was created.
+      - if: github.event_name == 'workflow_dispatch'
+        name: Validate dispatch branch
+        run: |
+          [[ "$GITHUB_REF" =~ $RELEASE_BRANCH_PATTERN ]] || {
+            echo "::error::Manual builds must run on a release branch";
+            exit 1;
+          }
+
+      - name: Validate tag format
+        run: |
+          [[ "$TAG" =~ $VERSION_TAG_PATTERN ]] || {
+            echo "::error::Tag must follow the v{major}.{minor}.{patch} format";
+            exit 1;
+          }
+
+      - name: Check whether we are building the latest release overall
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          latest_release_tag=$(gh api "repos/${GITHUB_REPOSITORY}/releases/latest" --jq .tag_name)
+          
+          if [[ "$TAG" == "$latest_release_tag" ]]; then
+              echo "IS_LATEST_RELEASE=true" >> "$GITHUB_ENV"
+          fi
+
+      - name: Determine if tag is latest in its major version
+        run: |
+          major="${TAG%%.*}"
+          echo "MAJOR=$major" >> "$GITHUB_ENV"
+          latest_major_tag=$(git tag --merged "origin/release/$major" --sort=-version:refname | head -n 1)
+          
+          if [[ "$TAG" == "$latest_major_tag" ]]; then
+          echo "SHOULD_PUBLISH_MAJOR=true" >> "$GITHUB_ENV"
+          fi
 
       # https://github.com/docker/setup-buildx-action
       - uses: docker/setup-buildx-action@v4
@@ -192,10 +123,9 @@ jobs:
           images: ${{ inputs.DOCKER_REPOSITORY }}
           flavor: latest=false
           tags: |
-            type=raw,value=latest,enable=${{ steps.tags.outputs.should_publish_latest }}
-            type=semver,pattern={{major}},value=${{ steps.tags.outputs.version }},enable=${{ steps.tags.outputs.should_publish_major }}
-            type=semver,pattern={{major}}.{{minor}},value=${{ steps.tags.outputs.version }},enable=${{ steps.tags.outputs.should_publish_minor }}
-            type=semver,pattern={{version}},value=${{ steps.tags.outputs.version }}
+            type=semver,pattern={{major}},value=${{ env.TAG }},enable=${{ env.SHOULD_PUBLISH_MAJOR == 'true' }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ env.TAG }}
+            type=semver,pattern={{version}},value=${{ env.TAG }}
             type=sha
 
       # https://github.com/docker/login-action
@@ -216,15 +146,15 @@ jobs:
           provenance: true
           tags: ${{ steps.meta.outputs.tags }}
           build-args: ${{ secrets.BUILD_ARGS }}
-          cache-from: type=registry,ref=${{ inputs.DOCKER_REPOSITORY }}:buildcache-v${{ steps.tags.outputs.major }}
-          cache-to: type=registry,ref=${{ inputs.DOCKER_REPOSITORY }}:buildcache-v${{ steps.tags.outputs.major }},mode=max
+          cache-from: type=registry,ref=${{ inputs.DOCKER_REPOSITORY }}:buildcache-${{ env.MAJOR }}
+          cache-to: type=registry,ref=${{ inputs.DOCKER_REPOSITORY }}:buildcache-${{ env.MAJOR }},mode=max
 
       - if: inputs.BAKE_FILE != ''
         name: Bake and push production images
         # https://github.com/docker/bake-action
         uses: docker/bake-action@v7
         env:
-          CACHE_REF: ${{ inputs.DOCKER_REPOSITORY }}:buildcache-v${{ steps.tags.outputs.major }}
+          CACHE_REF: ${{ inputs.DOCKER_REPOSITORY }}:buildcache-${{ env.MAJOR }}
         with:
           source: .
           files: |
@@ -235,7 +165,7 @@ jobs:
           sbom: true
           provenance: true
 
-      - if: steps.tags.outputs.should_publish_latest == 'true'
+      - if: env.IS_LATEST_RELEASE == 'true'
         name: Sync latest README to Docker Hub
         # https://github.com/peter-evans/dockerhub-description
         uses: peter-evans/dockerhub-description@v5

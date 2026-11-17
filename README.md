@@ -55,17 +55,10 @@ Refer to [examples/docker-bake.hcl](examples/docker-bake.hcl) for an example of 
 
 Production images require published GitHub releases.
 
-Existing releases can be rebuilt by manually dispatching a workflow run with the desired tag. 
-The action will determine which docker tags to build and publish:
+Existing releases can be rebuilt by manually dispatching a workflow run for a release branch.
+The action will build the latest tag for the release branch.
 
-| Published tag | Other published tags | Tags updated          |
-|---------------|----------------------|-----------------------|
-| `1.1.2`       | `1.2.0`              | `1.1`, not `1`        |
-| `1.2.0`       | `1.2.1`              | Neither `1.2` nor `1` |
-| `1.2.1`       | No newer `1.x.x`     | `1.2` and `1`         |
-
-The `latest` tag follows GitHub's designated latest published stable release. 
-Only that release synchronizes its README and repository description to Docker Hub.
+Only the tag designated as GitHub's latest release synchronizes its README and repository description to Docker Hub.
 
 #### Pull Request Images
 
