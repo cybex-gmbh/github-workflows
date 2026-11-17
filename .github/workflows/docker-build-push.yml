@@ -33,7 +33,7 @@ permissions:
 
 env:
   # Branch: E.g. release/v1.
-  RELEASE_BRANCH_PATTERN: '^refs/heads/release/v(0|[1-9][0-9]*)$'
+  RELEASE_BRANCH_PATTERN: '^refs/heads/release/v\d+$'
   # Published tag: E.g. v1.2.1.
   VERSION_TAG_PATTERN: '^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'
 
