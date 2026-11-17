@@ -46,19 +46,31 @@ For this workflow to work, the following GitHub secrets have to be defined:
 - DOCKERHUB_USERNAME
 - DOCKERHUB_TOKEN
 
-Also, the Docker Hub repository has to be passed as input. See the workflow input section for details.
+Docker Hub credentials need push permission and, for preview cleanup, tag-delete permission.
+
+Refer to [examples/build.yml](examples/build.yml) for an example of how to call this workflow.
+Refer to [examples/docker-bake.hcl](examples/docker-bake.hcl) for an example of how to define a bake file to use with this action.
 
 #### Production Images
 
-Working with GitHub releases is required as the semantic versioning is used for image tags. The `latest` tag will only be applied, if the release is marked as
-latest in GitHub.
+Production images require published GitHub releases.
 
-Additionally, the repository README file and description will be synchronized to Docker Hub.
+Existing releases can be rebuilt by manually dispatching a workflow run for a release branch.
+The action will build the latest tag for the release branch.
+
+Only the tag designated as GitHub's latest release synchronizes its README and repository description to Docker Hub.
 
 #### Pull Request Images
 
-When this workflow is called from a pull request with a `pullpreview` label, the image will be tagged with the branch name.
+When this workflow is called from a pull request with a `create docker image` label,
+the image will be tagged with `branch-` followed by the normalized branch name ('/' replaced by '-').
 The image will be deleted after the pull request is closed.
+
+#### Branch preview images
+
+Only pushes to `preview/**` branches create branch-named preview images.
+Deleting a `preview/**` branch deletes its preview image.
+PR and branch tags use the same normalization on creation and deletion.
 
 ### [Pullpreview](https://github.com/pullpreview/action)
 
