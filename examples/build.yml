@@ -17,8 +17,8 @@ permissions:
 jobs:
   build:
     name: Build and push Docker images
-    # https://github.com/cybex-gmbh/github-workflows/blob/main/.github/workflows/docker-build-push.yml
-    uses: cybex-gmbh/github-workflows/.github/workflows/docker-build-push.yml@main
+    # https://github.com/cybex-gmbh/github-workflows/blob/main/.github/workflows/build.yml
+    uses: cybex-gmbh/github-workflows/.github/workflows/build.yml@main
     with:
       DOCKER_REPOSITORY: cybexwebdev/your-repository
 #      DOCKERFILE_PATH: ./path/to/Dockerfile
